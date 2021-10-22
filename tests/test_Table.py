@@ -30,7 +30,7 @@ class TestTable(unittest.TestCase):
         self.assertTrue(np.allclose(C, [3, 4, 5]))
 
     def test_canSampleTable(self):
-        table = Table(3, seed=1, columns=[
+        table = Table(3, seed=2, columns=[
             { 'name': 'A', 'shape': 3 },
             { 'name': 'B', 'shape': tuple()},
         ])
@@ -39,13 +39,13 @@ class TestTable(unittest.TestCase):
             table.addTuple((np.arange(3) * i, i**2))
 
         A, B = table.sample()
-        self.assertTrue(np.allclose(A, [[0, 6, 12]]))
-        self.assertTrue(np.allclose(B, [36]))
+        self.assertTrue(np.allclose(A, [[0, 5, 10]]))
+        self.assertTrue(np.allclose(B, [25]))
 
         A, B = table.sample(3)
         self.assertTrue(np.allclose(A, [
-            [0, 7, 14],
             [0, 5, 10],
+            [0, 7, 14],
             [0, 6, 12],
         ]))
-        self.assertTrue(np.allclose(B, [49, 25, 36]))
+        self.assertTrue(np.allclose(B, [25, 49, 36]))

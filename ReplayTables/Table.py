@@ -1,37 +1,60 @@
+from __future__ import annotations
 import numpy as np
 import numpy.typing as npt
-from typing import Dict, Iterable, List, Sequence, Tuple, TypedDict
-from numba import njit
-from ReplayTables.RandDict import RandDict
+from abc import abstractmethod
+from numpy.random import default_rng
+from typing import Any, Dict, List, Sequence, Tuple, TypedDict
+from ReplayTables._utils.numpy import asTuple, padded
 
 class _ColumnDefReq(TypedDict):
     name: str
-    shape: npt._ShapeLike
+    shape: npt._shape._ShapeLike
 
 class ColumnDef(_ColumnDefReq, total=False):
     pad: float
     pad_multiple: int
     dtype: npt.DTypeLike
 
-def asTuple(shape: npt._ShapeLike) -> Tuple[int, ...]:
-    if isinstance(shape, tuple):
-        return shape
+# ------------------------
+# -- base View contract --
+# ------------------------
 
-    if isinstance(shape, list):
-        return tuple(shape)
+# to avoid circular imports, this needs to be stored alongside Table
+class View:
+    def __init__(self, table: Table) -> None:
+        self._table = table
 
-    if isinstance(shape, int):
-        return (shape, )
+    @abstractmethod
+    def _onAdd(self, idx: int):
+        ...
 
-    raise Exception("Could not cast shape to tuple!")
+    @abstractmethod
+    def _onEnd(self):
+        ...
 
+    @abstractmethod
+    def sample(self, size: int = 1) -> Tuple[np.ndarray]:
+        ...
+
+    @abstractmethod
+    def getAll(self) -> Tuple[np.ndarray]:
+        ...
+
+    @abstractmethod
+    def clear(self):
+        ...
+
+
+# -------------------------
+# -- base Table contract --
+# -------------------------
 class Table:
     def __init__(self, max_size: int, columns: Sequence[ColumnDef], seed: int = 0):
         self.max_size = max_size
         self._column_defs = columns
 
         self.seed = seed
-        self._rng = np.random.RandomState(seed)
+        self._rng = default_rng(seed)
 
         # monotonically increasing index which counts how many times we've added
         # technically we rely on numpy.int64 in the code so there is a limit
@@ -47,7 +70,7 @@ class Table:
         # views of this table
         # this need to be informed whenever data is added
         # or whenever a trajectory terminates
-        self._subscribers: List[View] = []
+        self._subscribers: List[Any] = []
 
         # values to pad a tensor with
         # depends on datatype
@@ -87,7 +110,7 @@ class Table:
             else:
                 self.pads.append(np.nan)
 
-    def addSubscriber(self, sus: "View"):
+    def addSubscriber(self, sus: View):
         if self._idx > 0:
             raise Exception("Cannot subscribe after data has already been collected")
 
@@ -125,113 +148,3 @@ class Table:
 
     def __len__(self):
         return self._samples
-
-class View:
-    def __init__(self, table: Table, size: int):
-        # sequences whose starting index is older than this are invalid
-        # we will clear these lazily when able
-        self.max_age = table.max_size
-        self.size = size
-
-        # add a communication link between this view and its parent table
-        # so that states are synchronized
-        self._table = table
-        self._table.addSubscriber(self)
-
-        # a special dictionary which stores keys and values in hash tables
-        # to allow O(1) random sampling (instead of O(n))
-        self._refs: RandDict[int, Tuple[int, int]] = RandDict()
-
-        # monotonically increasing index for accessing
-        # self._refs
-        self._idx = 0
-
-        # track the current sequence of indices
-        # reset whenever the trajectory ends
-        self._seq_idx = 0
-
-        # keep track of the last sequence length from this view
-        # that way we can back-track to find the last element
-        self._last_seq_length = -1
-
-    def _onAdd(self, idx: int):
-        self._refs[self._idx] = (idx, idx)
-        self._idx += 1
-        self._seq_idx += 1
-
-        n = min(self.size, self._seq_idx)
-        to_update = (i - 1 for i in range(self._idx, self._idx - n, -1))
-
-        for i in to_update:
-            self._refs[i] = (self._refs[i][0], idx + 1)
-
-    def _onEnd(self):
-        self._last_seq_length = min(self._seq_idx, self.size)
-        self._seq_idx = 0
-
-    def _seq2TensorTuple(self, seqs: Iterable[Tuple[int, int]]):
-        cols = (self._table.getSequence(rotatedSequence(seq[0], seq[1], self._table.max_size), self.size) for seq in seqs)
-
-        return tuple(map(np.stack, zip(*cols)))
-
-    def _resample(self) -> Tuple[int, int]:
-        idx = self._table._rng.randint(0, len(self._refs))
-        seq = self._refs.getIndex(idx)
-
-        age = self._table._idx - seq[0]
-        if age > self.max_age:
-            self._refs.delIndex(idx)
-            return self._resample()
-
-        return seq
-
-    def sample(self, size: int = 1):
-        seqs = (self._resample() for _ in range(size))
-        return self._seq2TensorTuple(seqs)
-
-    def getAll(self):
-        self.clearOld()
-        return self._seq2TensorTuple(self._refs.values())
-
-    def numSequencesThisRound(self):
-        # this happens if we never see a termination
-        if self._last_seq_length == -1:
-            return min(self._idx, self.size)
-
-        return min(self._last_seq_length, self.size)
-
-    def getLastComplete(self, offset: int = 0):
-        # clear out memory only when it is twice as full as necessary
-        # save some compute since we are hardly using any memory
-        if len(self._refs) > self._table.max_size * 2:
-            self.clearOld()
-
-        last = self.numSequencesThisRound()
-        seq = self._refs[self._idx - last + offset]
-        return self._seq2TensorTuple([seq])
-
-    def clearOld(self):
-        def to_del():
-            for key in self._refs:
-                seq = self._refs[key]
-
-                if self._table._idx - seq[0] > self.max_age:
-                    yield key
-
-        # note this needs to be 2 loops
-        # otherwise we change dict while iterating, which is error-prone
-        keys = list(to_del())
-        for key in keys:
-            del self._refs[key]
-
-@njit(cache=True)
-def rotatedSequence(lo: int, hi: int, mod: int) -> np.ndarray:
-    seq = np.arange(lo, hi, dtype=np.int64)
-    return seq % mod
-
-@njit(cache=True)
-def padded(arr: np.ndarray, size: int, mult: int, value: float = np.nan):
-    s = int(np.ceil(size / mult) * mult)
-    out = np.ones((s, ) + arr.shape[1:], dtype=arr.dtype) * value
-    out[:arr.shape[0]] = arr
-    return out

@@ -1,7 +1,8 @@
 import unittest
 import numpy as np
 
-from ReplayTables.Table import Table, View
+from ReplayTables.Table import Table
+from ReplayTables.NStepView import NStepView
 
 class TestView(unittest.TestCase):
     def test_getAllSequences(self):
@@ -12,7 +13,7 @@ class TestView(unittest.TestCase):
         ])
 
         # will record sequences of size 3
-        view = View(table, 3)
+        view = NStepView(table, 3)
 
         for i in range(20):
             table.addTuple((np.arange(3) * i, i % 3 == 0, i))
@@ -38,7 +39,7 @@ class TestView(unittest.TestCase):
 
         # if we try to add a view to a table that already has data
         # that is undefined behavior and so through an error
-        self.assertRaises(Exception, lambda: View(table, 4))
+        self.assertRaises(Exception, lambda: NStepView(table, 4))
 
     def test_customPad(self):
         table = Table(7, seed=0, columns=[
@@ -48,7 +49,7 @@ class TestView(unittest.TestCase):
         ])
 
         # will record sequences of size 3
-        view = View(table, 3)
+        view = NStepView(table, 3)
 
         for i in range(20):
             table.addTuple((np.arange(3) * i, i % 3 == 0, i))
@@ -81,8 +82,8 @@ class TestView(unittest.TestCase):
         ])
 
         # will record sequences of size 3 and 5
-        view3 = View(table, 3)
-        view5 = View(table, 5)
+        view3 = NStepView(table, 3)
+        view5 = NStepView(table, 5)
 
         for i in range(20):
             table.addTuple((np.arange(3) * i, i % 3 == 0, i))
@@ -121,8 +122,8 @@ class TestView(unittest.TestCase):
         ])
 
         # will record sequences of size 3 and 5
-        view3 = View(table, 3)
-        view5 = View(table, 5)
+        view3 = NStepView(table, 3)
+        view5 = NStepView(table, 5)
 
         for i in range(20):
             table.addTuple((np.arange(3) * i, i % 3 == 0, i))
@@ -138,15 +139,15 @@ class TestView(unittest.TestCase):
         # now I want 2 of those trajectories sampled at random
         A, B, C = view3.sample(2)
         self.assertTrue(np.allclose(C, [
-            [15, 0, 0],
             [17, 18, 19],
+            [15, 0, 0],
         ]))
 
         A, B, C = view5.sample(3)
         self.assertTrue(np.allclose(C, [
             [15, 0, 0, 0, 0],
             [16, 17, 18, 19, 0],
-            [19, 0, 0, 0, 0],
+            [15, 0, 0, 0, 0],
         ]))
 
     def test_getLastComplete(self):
@@ -157,8 +158,8 @@ class TestView(unittest.TestCase):
         ])
 
         # will record sequences of size 3 and 5
-        view3 = View(table, 3)
-        view5 = View(table, 5)
+        view3 = NStepView(table, 3)
+        view5 = NStepView(table, 5)
 
         for i in range(20):
             table.addTuple((np.arange(3) * i, i % 3 == 0, i))
