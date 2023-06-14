@@ -1,10 +1,12 @@
 import numpy as np
 import dataclasses
 
-from typing import cast, Any, Optional, Tuple, Type
+from typing import Any, Dict, List, Optional, Tuple, Type
 from ReplayTables._utils.logger import logger
 from ReplayTables._utils.MinMaxHeap import MinMaxHeap
-from ReplayTables.ReplayBuffer import ReplayBufferInterface, EID, EIDS, T
+from ReplayTables.ReplayBuffer import ReplayBufferInterface
+from ReplayTables.interface import EID, EIDs, T
+from ReplayTables.storage.Storage import Storage
 
 @dataclasses.dataclass
 class PrioritizedHeapConfig:
@@ -16,6 +18,7 @@ class PrioritizedHeap(ReplayBufferInterface[T]):
 
         self._c = config or PrioritizedHeapConfig()
         self._heap = MinMaxHeap[EID]()
+        self._storage = NoncircularBuffer(max_size)
 
     def size(self):
         return self._heap.size()
@@ -23,15 +26,13 @@ class PrioritizedHeap(ReplayBufferInterface[T]):
     def _add(self, transition: T):
         eid = getattr(transition, 'eid', None)
         if eid is not None:
-            eid = cast(EID, eid)
+            self._storage.set(eid, transition)
         else:
-            eid = cast(EID, self._t)
-            self._t += 1
+            eid = self._storage.add(transition)
             try:
                 setattr(transition, 'eid', eid)
             except Exception: ...
 
-        self._storage[eid] = transition
         return eid
 
     def add(self, transition: T, /, **kwargs: Any):
@@ -46,6 +47,8 @@ class PrioritizedHeap(ReplayBufferInterface[T]):
         if self.size() == self._max_size:
             p, tossed_eid = self._heap.pop_min()
             logger.debug(f'Heap is full. Tossing item: {tossed_eid} - {p}')
+            print(eid, tossed_eid)
+            print(self._heap.size())
             del self._storage[tossed_eid]
 
         logger.debug(f'Adding element: {eid} - {priority}')
@@ -73,7 +76,7 @@ class PrioritizedHeap(ReplayBufferInterface[T]):
         if idx is None:
             return None
 
-        d = self._storage[idx]
+        d = self._storage.get_item(idx)
         del self._storage[idx]
         return d
 
@@ -82,7 +85,7 @@ class PrioritizedHeap(ReplayBufferInterface[T]):
         if idx is None:
             return None
 
-        d = self._storage[idx]
+        d = self._storage.get_item(idx)
         del self._storage[idx]
         return d
 
@@ -91,7 +94,7 @@ class PrioritizedHeap(ReplayBufferInterface[T]):
         idxs = (d for d in idxs if d is not None)
         return np.fromiter(idxs, dtype=np.int64)
 
-    def sample(self, n: int) -> Tuple[T, EIDS, np.ndarray]:
+    def sample(self, n: int) -> Tuple[T, EIDs, np.ndarray]:
         batch, idxs, weights = super().sample(n)
 
         for idx in idxs:
@@ -99,5 +102,33 @@ class PrioritizedHeap(ReplayBufferInterface[T]):
 
         return batch, idxs, weights
 
-    def _isr_weights(self, idxs: EIDS) -> np.ndarray:
+    def _isr_weights(self, idxs: EIDs) -> np.ndarray:
         return np.ones(len(idxs))
+
+
+class NoncircularBuffer(Storage[T]):
+    def __init__(self, max_size: int):
+        super().__init__(max_size)
+
+        self._store: Dict[EID, T] = {}
+
+    def add(self, transition: T, /, **kwargs: Any) -> EID:
+        eid = self._next_eid()
+        self._store[eid] = transition
+
+        return eid
+
+    def set(self, eid: EID, transition: T):
+        self._store[eid] = transition
+
+    def get(self, eids: EIDs) -> List[T]:
+        return [self._store[eid] for eid in eids]
+
+    def get_item(self, eid: EID) -> T:
+        return self._store[eid]
+
+    def __delitem__(self, eid: EID):
+        del self._store[eid]
+
+    def __len__(self) -> int:
+        return len(self._store)

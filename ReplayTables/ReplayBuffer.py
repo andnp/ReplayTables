@@ -1,11 +1,10 @@
 import numpy as np
 from abc import abstractmethod
-from typing import Any, Dict, Generic, Iterable, List, NewType, Tuple, TypeVar, Type, Union, cast
+from typing import Any, Generic, List, Tuple, Type, cast
 from ReplayTables.Distributions import UniformDistribution
-
-T = TypeVar('T', bound=Iterable)
-EID = NewType('EID', int)
-EIDS = NewType('EIDS', np.ndarray)
+from ReplayTables.interface import T, EIDs
+from ReplayTables.storage.BasicStorage import BasicStorage
+from ReplayTables.storage.Storage import Storage
 
 class ReplayBufferInterface(Generic[T]):
     def __init__(self, max_size: int, structure: Type[T], rng: np.random.Generator):
@@ -13,8 +12,7 @@ class ReplayBufferInterface(Generic[T]):
         self._structure = cast(Any, structure)
         self._rng = rng
 
-        self._t = 0
-        self._storage: Dict[EID, T] = {}
+        self._storage: Storage[T] = BasicStorage(self._max_size)
 
         self._views: List[ReplayViewInterface[T]] = []
 
@@ -22,23 +20,20 @@ class ReplayBufferInterface(Generic[T]):
         return len(self._storage)
 
     def add(self, transition: T, /, **kwargs: Any):
-        idx = cast(EID, self._t % self._max_size)
-        self._t += 1
-
-        self._storage[idx] = transition
-        self._update_dist(idx, transition=transition, **kwargs)
+        eid = self._storage.add(transition)
+        self._update_dist(eid, transition=transition, **kwargs)
         for view in self._views:
-            view._update_dist(idx, transition=transition, **kwargs)
+            view._update_dist(eid, transition=transition, **kwargs)
 
-        return idx
+        return eid
 
-    def sample(self, n: int) -> Tuple[T, EIDS, np.ndarray]:
+    def sample(self, n: int) -> Tuple[T, EIDs, np.ndarray]:
         idxs = self._sample_idxs(n)
         weights = self._isr_weights(idxs)
         return self.get(idxs), idxs, weights
 
-    def get(self, idxs: EIDS):
-        samples = (self._storage[i] for i in idxs)
+    def get(self, eids: EIDs):
+        samples = self._storage.get(eids)
         stacked = (np.stack(xs, axis=0) for xs in zip(*samples))
 
         return self._structure(*stacked)
@@ -46,33 +41,12 @@ class ReplayBufferInterface(Generic[T]):
     def register_view(self, view: Any):
         self._views.append(view)
 
-    def backwards_idxs(self, idxs: np.ndarray) -> EIDS:
-        t = self._t - 1
-        return cast(EIDS, (t - idxs) % self.size())
-
-    def forwards_idxs(self, idxs: np.ndarray) -> EIDS:
-        t = self._t - 1
-        return cast(EIDS, ((t - self.size()) + idxs) % self.size())
-
-    def __getitem__(self, idx: Union[int, slice]):
-        # 0 means the newest element
-        # -1 means the oldest element
-
-        if isinstance(idx, int):
-            idxs = np.array([idx])
-        else:
-            idxs = np.arange(idx.start, idx.stop, idx.step, dtype=np.int32)
-
-        idxs = self.backwards_idxs(idxs)
-        weights = self._isr_weights(idxs)
-        return self.get(idxs), idxs, weights
-
     # required private methods
     @abstractmethod
-    def _sample_idxs(self, n: int) -> EIDS: ...
+    def _sample_idxs(self, n: int) -> EIDs: ...
 
     @abstractmethod
-    def _isr_weights(self, idxs: EIDS) -> np.ndarray: ...
+    def _isr_weights(self, idxs: EIDs) -> np.ndarray: ...
 
     # optional methods
     def _update_dist(self, idx: int, /, **kwargs: Any): ...
@@ -102,17 +76,17 @@ class ReplayViewInterface(Generic[T]):
     def size(self) -> int:
         return self._buffer.size()
 
-    def sample(self, n: int) -> Tuple[T, EIDS, np.ndarray]:
+    def sample(self, n: int) -> Tuple[T, EIDs, np.ndarray]:
         idxs = self._sample_idxs(n)
         weights = self._isr_weights(idxs)
         return self._buffer.get(idxs), idxs, weights
 
     # required private methods
     @abstractmethod
-    def _sample_idxs(self, n: int) -> EIDS: ...
+    def _sample_idxs(self, n: int) -> EIDs: ...
 
     @abstractmethod
-    def _isr_weights(self, idxs: EIDS) -> np.ndarray: ...
+    def _isr_weights(self, idxs: EIDs) -> np.ndarray: ...
 
     # optional methods
     def _update_dist(self, idx: int, /, **kwargs: Any): ...
