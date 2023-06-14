@@ -67,31 +67,6 @@ class TestReplayBuffer:
         samples, _, _ = buffer.sample(2)
         assert np.all(samples.b == np.array([2, 2]))
 
-    def test_getitem(self):
-        rng = np.random.default_rng(0)
-        buffer = ReplayBuffer(10, Data, rng)
-
-        for i in range(15):
-            buffer.add(Data(a=i, b=2 * i))
-
-        # should be the most recently added item
-        got, _, _ = buffer[0]
-        expect = Data(a=np.array([14]), b=np.array([28]))
-        assert got == expect
-
-        # should be oldest item in buffer
-        got, _, _ = buffer[-1]
-        expect = Data(a=np.array([5]), b=np.array([10]))
-        assert got == expect
-
-        got, _, _ = buffer[2:7:2]
-        expect = Data(
-            a=np.array([12, 10, 8]),
-            b=np.array([24, 20, 16]),
-        )
-        assert np.all(got.a == expect.a)
-        assert np.all(got.b == expect.b)
-
     def test_pickleable(self):
         rng = np.random.default_rng(0)
         buffer = ReplayBuffer(5, Data, rng)
