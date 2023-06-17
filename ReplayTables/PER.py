@@ -1,7 +1,7 @@
 import numpy as np
 from dataclasses import dataclass
 from typing import cast, Any, Optional, Type
-from ReplayTables.ReplayBuffer import ReplayBufferInterface, EIDS, T
+from ReplayTables.ReplayBuffer import ReplayBufferInterface, EID, EIDS, T
 from ReplayTables.Distributions import MixinUniformDistribution, MixtureDistribution, PrioritizedDistribution, SubDistribution, UniformDistribution
 
 @dataclass
@@ -62,3 +62,10 @@ class PrioritizedReplay(ReplayBufferInterface[T]):
             self._c.max_decay * self._max_priority,
             priorities.max(),
         )
+
+    def delete_sample(self, eid: EID):
+        idx = np.array([eid])
+        zero = np.zeros(1)
+
+        self._p_dist.update(idx, zero)
+        self._uniform.update(idx, zero)

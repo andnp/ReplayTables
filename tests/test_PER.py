@@ -2,7 +2,7 @@ import pickle
 import numpy as np
 from typing import cast, NamedTuple
 
-from ReplayTables.ReplayBuffer import EIDS
+from ReplayTables.ReplayBuffer import EID, EIDS
 from ReplayTables.PER import PrioritizedReplay
 
 class Data(NamedTuple):
@@ -84,6 +84,20 @@ class TestPER:
 
         assert np.all(s.a == s2.a) and np.all(s.b == s2.b)
 
+    def test_delete_sample(self):
+        rng = np.random.default_rng(0)
+        buffer = PrioritizedReplay(5, Data, rng)
+
+        for i in range(5):
+            buffer.add(Data(i, 2 * i))
+
+        batch, _, _, = buffer.sample(512)
+        assert np.unique(batch.a).shape == (5,)
+
+        buffer.delete_sample(cast(EID, 2))
+        batch, _, _ = buffer.sample(512)
+        assert np.unique(batch.a).shape == (4,)
+        assert 2 not in batch.a
 
 # ----------------
 # -- Benchmarks --
