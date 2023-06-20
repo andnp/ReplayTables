@@ -30,7 +30,7 @@ class PrioritizedReplay(ReplayBufferInterface[T]):
 
         self._max_priority = 1e-16
 
-    def _sample_idxs(self, n: int) -> EIDs:
+    def _sample_eids(self, n: int) -> EIDs:
         idxs = self._idx_dist.sample(self._rng, n)
         return cast(EIDs, np.asarray(idxs))
 

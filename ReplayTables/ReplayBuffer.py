@@ -28,7 +28,7 @@ class ReplayBufferInterface(Generic[T]):
         return eid
 
     def sample(self, n: int) -> Tuple[T, EIDs, np.ndarray]:
-        idxs = self._sample_idxs(n)
+        idxs = self._sample_eids(n)
         weights = self._isr_weights(idxs)
         return self.get(idxs), idxs, weights
 
@@ -43,7 +43,7 @@ class ReplayBufferInterface(Generic[T]):
 
     # required private methods
     @abstractmethod
-    def _sample_idxs(self, n: int) -> EIDs: ...
+    def _sample_eids(self, n: int) -> EIDs: ...
 
     @abstractmethod
     def _isr_weights(self, idxs: EIDs) -> np.ndarray: ...
@@ -60,7 +60,7 @@ class ReplayBuffer(ReplayBufferInterface[T]):
     def _update_dist(self, idx: int, /, **kwargs: Any):
         self._idx_dist.update(self.size())
 
-    def _sample_idxs(self, n: int):
+    def _sample_eids(self, n: int):
         return self._idx_dist.sample(self._rng, n)
 
     def _isr_weights(self, idxs: np.ndarray):
@@ -77,13 +77,13 @@ class ReplayViewInterface(Generic[T]):
         return self._buffer.size()
 
     def sample(self, n: int) -> Tuple[T, EIDs, np.ndarray]:
-        idxs = self._sample_idxs(n)
+        idxs = self._sample_eids(n)
         weights = self._isr_weights(idxs)
         return self._buffer.get(idxs), idxs, weights
 
     # required private methods
     @abstractmethod
-    def _sample_idxs(self, n: int) -> EIDs: ...
+    def _sample_eids(self, n: int) -> EIDs: ...
 
     @abstractmethod
     def _isr_weights(self, idxs: EIDs) -> np.ndarray: ...
