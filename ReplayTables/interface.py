@@ -1,6 +1,8 @@
 import numpy as np
 from typing import cast, Any, NewType, NamedTuple, Protocol, TypeVar
 
+IDX = NewType('IDX', int)
+IDXs = NewType('IDXs', np.ndarray)
 EID = NewType('EID', int)
 EIDs = NewType('EIDs', np.ndarray)
 

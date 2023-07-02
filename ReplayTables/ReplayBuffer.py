@@ -3,6 +3,8 @@ from abc import abstractmethod
 from typing import Any, Tuple
 from ReplayTables.Distributions import UniformDistribution
 from ReplayTables.interface import Timestep, Batch, EID, EIDs
+from ReplayTables.ingress.IndexMapper import IndexMapper
+from ReplayTables.ingress.CircularMapper import CircularMapper
 from ReplayTables.storage.BasicStorage import BasicStorage
 from ReplayTables.storage.Storage import Storage
 from ReplayTables._utils.LagBuffer import LagBuffer
@@ -14,7 +16,8 @@ class ReplayBufferInterface:
         self._rng = rng
 
         self._lag_buffer = LagBuffer[Tuple[EID, Timestep, Any]](maxlen=lag)
-        self._storage: Storage = BasicStorage(self._max_size + lag)
+        self._idx_mapper: IndexMapper = CircularMapper(max_size + lag)
+        self._storage: Storage = BasicStorage(max_size + lag, self._idx_mapper)
 
     def size(self) -> int:
         return max(0, len(self._storage) - self._lag)

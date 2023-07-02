@@ -1,10 +1,12 @@
 from abc import abstractmethod
 from typing import Any, cast
 from ReplayTables.interface import Batch, Timestep, TaggedTimestep, EID, EIDs
+from ReplayTables.ingress.IndexMapper import IndexMapper
 
 class Storage:
-    def __init__(self, max_size: int):
+    def __init__(self, max_size: int, idx_mapper: IndexMapper):
         self._max_size = max_size
+        self._idx_mapper = idx_mapper
 
         self._t = 0
 

@@ -1,17 +1,16 @@
 import numpy as np
-from typing import Any, Dict, NewType
-from ReplayTables.interface import Batch, Timestep, TaggedTimestep, EID, EIDs
+from typing import Any, Dict
+from ReplayTables.interface import Batch, Timestep, TaggedTimestep, EID, EIDs, IDX
+from ReplayTables.ingress.IndexMapper import IndexMapper
 from ReplayTables.storage.Storage import Storage
 
 from ReplayTables._utils.jit import try2jit
 
-Idx = NewType('Idx', int)
-
 class BasicStorage(Storage):
-    def __init__(self, max_size: int):
-        super().__init__(max_size)
+    def __init__(self, max_size: int, idx_mapper: IndexMapper):
+        super().__init__(max_size, idx_mapper)
 
-        self._state_store: Dict[Idx, np.ndarray] = {}
+        self._state_store: Dict[IDX, np.ndarray] = {}
         self._eids = np.zeros(max_size, dtype=np.uint64)
         # TODO: we should take dtype params to optionally store this as an integer
         self._a = np.zeros(max_size)
@@ -22,8 +21,7 @@ class BasicStorage(Storage):
     def add(self, transition: Timestep, /, **kwargs: Any) -> EID:
         eid = self._next_eid()
 
-        # by wrapping, this implicitly deletes old transitions (i.e. circular buffer)
-        idx = self.eid2idx(eid)
+        idx = self._idx_mapper.add_eid(eid, **kwargs)
         self._state_store[idx] = transition.x
         self._r[idx] = transition.r
         self._a[idx] = transition.a
@@ -34,7 +32,7 @@ class BasicStorage(Storage):
         return eid
 
     def set(self, eid: EID, transition: Timestep):
-        idx = self.eid2idx(eid)
+        idx = self._idx_mapper.eid2idx(eid)
         self._state_store[idx] = transition.x
         self._r[idx] = transition.r
         self._a[idx] = transition.a
@@ -42,10 +40,10 @@ class BasicStorage(Storage):
         self._gamma[idx] = transition.gamma
 
     def get(self, eids: EIDs, lag: int) -> Batch:
-        idxs = self.eid2idx(eids)
+        idxs = self._idx_mapper.eids2idxs(eids)
 
         n_eids: Any = eids + lag
-        n_idxs = self.eid2idx(n_eids)
+        n_idxs = self._idx_mapper.eids2idxs(n_eids)
         x = np.stack([self._state_store[idx] for idx in idxs], axis=0)
         xp = np.stack([self._state_store[idx] for idx in n_idxs], axis=0)
 
@@ -61,7 +59,7 @@ class BasicStorage(Storage):
         )
 
     def get_item(self, eid: EID) -> TaggedTimestep:
-        idx = self.eid2idx(eid)
+        idx = self._idx_mapper.eid2idx(eid)
         return TaggedTimestep(
             x=self._state_store[idx],
             a=self._a[idx],
@@ -72,15 +70,11 @@ class BasicStorage(Storage):
         )
 
     def __delitem__(self, eid: EID):
-        idx = self.eid2idx(eid)
+        idx = self._idx_mapper.remove_eid(eid)
         del self._state_store[idx]
 
     def __len__(self):
         return len(self._state_store)
-
-    def eid2idx(self, eid: EID | EIDs):
-        idx: Any = eid % self._max_size
-        return idx
 
 @try2jit()
 def _return(max_size: int, idxs: np.ndarray, lag: int, r: np.ndarray, term: np.ndarray, gamma: np.ndarray):
