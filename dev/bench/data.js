@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1687047401896,
+  "lastUpdate": 1688329640218,
   "repoUrl": "https://github.com/andnp/ReplayTables",
   "entries": {
     "Python Benchmark with pytest-benchmark": [
@@ -792,6 +792,86 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 6.261673705014444e-7",
             "extra": "mean: 28.159466470602812 usec\nrounds: 16314"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "andnpatterson@gmail.com",
+            "name": "andy",
+            "username": "andnp"
+          },
+          "committer": {
+            "email": "andnpatterson@gmail.com",
+            "name": "andy",
+            "username": "andnp"
+          },
+          "distinct": true,
+          "id": "7ab819521ea4f775975a51203aae5346fb9d760b",
+          "message": "ci: try to make performance warnings less aggressive",
+          "timestamp": "2023-07-01T22:43:31-06:00",
+          "tree_id": "da4b7be3e42e88cc8903bb106f45fd21fb057d3e",
+          "url": "https://github.com/andnp/ReplayTables/commit/7ab819521ea4f775975a51203aae5346fb9d760b"
+        },
+        "date": 1688329639615,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "tests/test_PER.py::TestBenchmarks::test_per_add",
+            "value": 54642.809996723365,
+            "unit": "iter/sec",
+            "range": "stddev: 9.050912977494405e-7",
+            "extra": "mean: 18.300669384681438 usec\nrounds: 8953"
+          },
+          {
+            "name": "tests/test_PER.py::TestBenchmarks::test_per_sample",
+            "value": 5466.183831317131,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000028024670779500194",
+            "extra": "mean: 182.9429874404791 usec\nrounds: 2946"
+          },
+          {
+            "name": "tests/test_PrioritizedHeap.py::TestBenchmarks::test_prioritized_heap_add",
+            "value": 129043.13963389616,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000011552646379636492",
+            "extra": "mean: 7.749346480851795 usec\nrounds: 32680"
+          },
+          {
+            "name": "tests/test_PrioritizedHeap.py::TestBenchmarks::test_prioritized_heap_sample",
+            "value": 2620.8003172872886,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00006203990957128075",
+            "extra": "mean: 381.562835368957 usec\nrounds: 1883"
+          },
+          {
+            "name": "tests/test_ReplayBuffer.py::TestBenchmarks::test_replay_buffer_add",
+            "value": 861640.778001314,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000074171895751930616",
+            "extra": "mean: 1.160576455445421 usec\nrounds: 192308"
+          },
+          {
+            "name": "tests/test_ReplayBuffer.py::TestBenchmarks::test_replay_buffer_sample",
+            "value": 11212.687092646633,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000023764060219212453",
+            "extra": "mean: 89.18468800006092 usec\nrounds: 3750"
+          },
+          {
+            "name": "tests/utils/test_SumTree.py::TestBenchmarks::test_sumtree_update",
+            "value": 29701.091249947283,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00000201802960336895",
+            "extra": "mean: 33.66879659688514 usec\nrounds: 24213"
+          },
+          {
+            "name": "tests/utils/test_SumTree.py::TestBenchmarks::test_sumtree_sample",
+            "value": 34472.027053222126,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000001836695348547916",
+            "extra": "mean: 29.009028057911358 usec\nrounds: 14185"
           }
         ]
       }
