@@ -1,45 +1,44 @@
 import numpy as np
 from abc import abstractmethod
-from typing import Any, Generic, List, Tuple, Type, cast
+from typing import Any, Tuple
 from ReplayTables.Distributions import UniformDistribution
-from ReplayTables.interface import T, EIDs
+from ReplayTables.interface import Timestep, Batch, EID, EIDs
 from ReplayTables.storage.BasicStorage import BasicStorage
 from ReplayTables.storage.Storage import Storage
+from ReplayTables._utils.LagBuffer import LagBuffer
 
-class ReplayBufferInterface(Generic[T]):
-    def __init__(self, max_size: int, structure: Type[T], rng: np.random.Generator):
+class ReplayBufferInterface:
+    def __init__(self, max_size: int, lag: int, rng: np.random.Generator):
         self._max_size = max_size
-        self._structure = cast(Any, structure)
+        self._lag = lag
         self._rng = rng
 
-        self._storage: Storage[T] = BasicStorage(self._max_size)
-
-        self._views: List[ReplayViewInterface[T]] = []
+        self._lag_buffer = LagBuffer[Tuple[EID, Timestep, Any]](maxlen=lag)
+        self._storage: Storage = BasicStorage(self._max_size + lag)
 
     def size(self) -> int:
-        return len(self._storage)
+        return max(0, len(self._storage) - self._lag)
 
-    def add(self, transition: T, /, **kwargs: Any):
+    def add(self, transition: Timestep, /, **kwargs: Any):
         eid = self._storage.add(transition)
-        self._update_dist(eid, transition=transition, **kwargs)
-        for view in self._views:
-            view._update_dist(eid, transition=transition, **kwargs)
+
+        last = self._lag_buffer.push((eid, transition, kwargs))
+        if last is not None:
+            self._on_add(
+                last[0],
+                last[1],
+                **last[2],
+            )
 
         return eid
 
-    def sample(self, n: int) -> Tuple[T, EIDs, np.ndarray]:
-        idxs = self._sample_eids(n)
-        weights = self._isr_weights(idxs)
-        return self.get(idxs), idxs, weights
+    def sample(self, n: int) -> Tuple[Batch, EIDs, np.ndarray]:
+        eids = self._sample_eids(n)
+        weights = self._isr_weights(eids)
+        return self.get(eids), eids, weights
 
     def get(self, eids: EIDs):
-        samples = self._storage.get(eids)
-        stacked = (np.stack(xs, axis=0) for xs in zip(*samples))
-
-        return self._structure(*stacked)
-
-    def register_view(self, view: Any):
-        self._views.append(view)
+        return self._storage.get(eids, self._lag)
 
     # required private methods
     @abstractmethod
@@ -48,16 +47,15 @@ class ReplayBufferInterface(Generic[T]):
     @abstractmethod
     def _isr_weights(self, idxs: EIDs) -> np.ndarray: ...
 
-    # optional methods
-    def _update_dist(self, idx: int, /, **kwargs: Any): ...
+    @abstractmethod
+    def _on_add(self, eid: EID, transition: Timestep, /, **kwargs: Any): ...
 
-
-class ReplayBuffer(ReplayBufferInterface[T]):
-    def __init__(self, max_size: int, structure: Type[T], rng: np.random.Generator):
-        super().__init__(max_size, structure, rng)
+class ReplayBuffer(ReplayBufferInterface):
+    def __init__(self, max_size: int, lag: int, rng: np.random.Generator):
+        super().__init__(max_size, lag, rng)
         self._idx_dist = UniformDistribution(0)
 
-    def _update_dist(self, idx: int, /, **kwargs: Any):
+    def _on_add(self, idx: EID, transition: Timestep, /, **kwargs: Any):
         self._idx_dist.update(self.size())
 
     def _sample_eids(self, n: int):
@@ -65,28 +63,3 @@ class ReplayBuffer(ReplayBufferInterface[T]):
 
     def _isr_weights(self, idxs: np.ndarray):
         return np.ones(len(idxs))
-
-class ReplayViewInterface(Generic[T]):
-    def __init__(self, buffer: ReplayBufferInterface[T]):
-        self._buffer = buffer
-        self._rng = buffer._rng
-
-        self._buffer.register_view(self)
-
-    def size(self) -> int:
-        return self._buffer.size()
-
-    def sample(self, n: int) -> Tuple[T, EIDs, np.ndarray]:
-        idxs = self._sample_eids(n)
-        weights = self._isr_weights(idxs)
-        return self._buffer.get(idxs), idxs, weights
-
-    # required private methods
-    @abstractmethod
-    def _sample_eids(self, n: int) -> EIDs: ...
-
-    @abstractmethod
-    def _isr_weights(self, idxs: EIDs) -> np.ndarray: ...
-
-    # optional methods
-    def _update_dist(self, idx: int, /, **kwargs: Any): ...

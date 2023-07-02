@@ -1,8 +1,8 @@
 from abc import abstractmethod
-from typing import Any, cast, Generic, List
-from ReplayTables.interface import T, EID, EIDs
+from typing import Any, cast
+from ReplayTables.interface import Batch, Timestep, TaggedTimestep, EID, EIDs
 
-class Storage(Generic[T]):
+class Storage:
     def __init__(self, max_size: int):
         self._max_size = max_size
 
@@ -26,17 +26,17 @@ class Storage(Generic[T]):
         ...
 
     @abstractmethod
-    def get(self, idxs: EIDs) -> List[T]:
+    def get(self, idxs: EIDs, lag: int) -> Batch:
         ...
 
     @abstractmethod
-    def get_item(self, idx: EID) -> T:
+    def get_item(self, idx: EID) -> TaggedTimestep:
         ...
 
     @abstractmethod
-    def set(self, eid: EID, transition: T):
+    def set(self, eid: EID, transition: Timestep):
         ...
 
     @abstractmethod
-    def add(self, transition: T, /, **kwargs: Any) -> EID:
+    def add(self, transition: Timestep, /, **kwargs: Any) -> EID:
         ...
