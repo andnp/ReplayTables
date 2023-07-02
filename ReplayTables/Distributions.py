@@ -26,7 +26,7 @@ class UniformDistribution(Distribution):
 
     def sample(self, rng: np.random.Generator, n: int):
         if self._size == 1:
-            return np.zeros(n)
+            return np.zeros(n, dtype=np.uint64)
 
         return rng.integers(0, self._size, size=n)
 
