@@ -1,8 +1,8 @@
 import numpy as np
 from dataclasses import dataclass
-from typing import cast, Any, Optional, Type
+from typing import cast, Any, Optional
 from ReplayTables.Distributions import MixinUniformDistribution, MixtureDistribution, PrioritizedDistribution, SubDistribution, UniformDistribution
-from ReplayTables.interface import EID, EIDs, T
+from ReplayTables.interface import EID, EIDs, Timestep
 from ReplayTables.ReplayBuffer import ReplayBufferInterface
 
 @dataclass
@@ -12,9 +12,9 @@ class PERConfig:
     priority_exponent: float = 0.5
     max_decay: float = 1.
 
-class PrioritizedReplay(ReplayBufferInterface[T]):
-    def __init__(self, max_size: int, structure: Type[T], rng: np.random.Generator, config: Optional[PERConfig] = None):
-        super().__init__(max_size, structure, rng)
+class PrioritizedReplay(ReplayBufferInterface):
+    def __init__(self, max_size: int, lag: int, rng: np.random.Generator, config: Optional[PERConfig] = None):
+        super().__init__(max_size, lag, rng)
 
         self._c = config or PERConfig()
         self._target = UniformDistribution(max_size)
@@ -34,7 +34,7 @@ class PrioritizedReplay(ReplayBufferInterface[T]):
         idxs = self._idx_dist.sample(self._rng, n)
         return cast(EIDs, np.asarray(idxs))
 
-    def _update_dist(self, idx: int, /, **kwargs: Any):
+    def _on_add(self, eid: EID, transition: Timestep, /, **kwargs: Any):
         if 'priority' in kwargs:
             priority = kwargs['priority']
         elif self._c.new_priority_mode == 'max':
@@ -47,7 +47,7 @@ class PrioritizedReplay(ReplayBufferInterface[T]):
         else:
             raise NotImplementedError()
 
-        idxs = np.array([idx])
+        idxs = np.array([eid])
         priorities = np.array([priority])
         self._p_dist.update(idxs, priorities)
         self._uniform.update(idxs)
