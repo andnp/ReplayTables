@@ -1,44 +1,35 @@
 from abc import abstractmethod
-from typing import Any, cast
-from ReplayTables.interface import Batch, Timestep, TaggedTimestep, EID, EIDs
-from ReplayTables.ingress.IndexMapper import IndexMapper
+from typing import Any
+from ReplayTables.interface import Batch, Timestep, TaggedTimestep, EID, EIDs, IDX, IDXs
 
 class Storage:
-    def __init__(self, max_size: int, idx_mapper: IndexMapper):
+    def __init__(self, max_size: int):
         self._max_size = max_size
-        self._idx_mapper = idx_mapper
-
-        self._t = 0
-
-    def _next_eid(self) -> EID:
-        eid = cast(EID, self._t)
-        self._t += 1
-        return eid
-
-    def _last_eid(self) -> EID:
-        assert self._t > 0, "No previous EID!"
-        return cast(EID, self._t - 1)
 
     @abstractmethod
     def __len__(self) -> int:
         ...
 
     @abstractmethod
-    def __delitem__(self, eid: EID):
+    def __delitem__(self, idx: IDX):
         ...
 
     @abstractmethod
-    def get(self, idxs: EIDs, lag: int) -> Batch:
+    def get(self, idxs: IDXs, n_idxs: IDXs, lag: int) -> Batch:
         ...
 
     @abstractmethod
-    def get_item(self, idx: EID) -> TaggedTimestep:
+    def get_item(self, idx: IDX) -> TaggedTimestep:
         ...
 
     @abstractmethod
-    def set(self, eid: EID, transition: Timestep):
+    def set(self, idx: IDX, transition: Timestep):
         ...
 
     @abstractmethod
-    def add(self, transition: Timestep, /, **kwargs: Any) -> EID:
+    def add(self, idx: IDX, eid: EID, transition: Timestep, /, **kwargs: Any) -> None:
+        ...
+
+    @abstractmethod
+    def get_eids(self, idxs: IDXs) -> EIDs:
         ...

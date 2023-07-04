@@ -98,6 +98,9 @@ class MixinUniformDistribution(PrioritizedDistribution):
 
         self.tree.update(self.dim, idxs, np.ones(len(idxs)))
 
+    def set(self, idxs: np.ndarray, vals: np.ndarray):
+        self.tree.update(self.dim, idxs, vals)
+
 
 class SubDistribution(NamedTuple):
     d: PrioritizedDistribution

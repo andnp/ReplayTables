@@ -21,9 +21,9 @@ class TestReplayBuffer:
         buffer.add(d)
         assert buffer.size() == 1
 
-        samples, idxs, weights = buffer.sample(10)
+        samples, weights = buffer.sample(10)
         assert np.all(samples.a == 1)
-        assert np.all(idxs == 0)
+        assert np.all(samples.eid == 0)
         assert np.all(weights == 1)
 
         # should be able to add a few more points
@@ -33,7 +33,7 @@ class TestReplayBuffer:
             buffer.add(d)
 
         assert buffer.size() == 5
-        samples, idxs, weights = buffer.sample(1000)
+        samples, weights = buffer.sample(1000)
 
         unique = np.unique(samples.a)
         unique.sort()
@@ -44,7 +44,7 @@ class TestReplayBuffer:
         buffer.add(fake_timestep(a=6))
         assert buffer.size() == 5
 
-        samples, _, _ = buffer.sample(1000)
+        samples, _ = buffer.sample(1000)
         unique = np.unique(samples.a)
         unique.sort()
         assert np.all(unique == np.array([2, 3, 4, 5, 6]))
@@ -57,7 +57,7 @@ class TestReplayBuffer:
         for _ in range(3):
             buffer.add(d)
 
-        samples, idx, weights = buffer.sample(1)
+        samples, weights = buffer.sample(1)
         assert np.all(samples.r == 1.99)
 
         d = fake_timestep(r=2, gamma=0, terminal=True)
@@ -66,7 +66,7 @@ class TestReplayBuffer:
         d = fake_timestep(r=1)
         buffer.add(d)
 
-        samples, idx, weights = buffer.sample(10)
+        samples, weights = buffer.sample(10)
         assert np.all(samples.r == np.array([2.98, 1.99, 1.99, 1.99, 1.99, 1.99, 1.99, 1.99, 1.99, 2.98]))
 
     def test_pickleable(self):
@@ -79,8 +79,8 @@ class TestReplayBuffer:
         byt = pickle.dumps(buffer)
         buffer2 = pickle.loads(byt)
 
-        s, _, _ = buffer.sample(3)
-        s2, _, _ = buffer2.sample(3)
+        s, _ = buffer.sample(3)
+        s2, _ = buffer2.sample(3)
 
         assert np.all(s.a == s2.a) and np.all(s.x == s2.x)
 
