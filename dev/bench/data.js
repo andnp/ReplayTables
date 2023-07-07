@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1688329640218,
+  "lastUpdate": 1688760140727,
   "repoUrl": "https://github.com/andnp/ReplayTables",
   "entries": {
     "Python Benchmark with pytest-benchmark": [
@@ -872,6 +872,100 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 0.000001836695348547916",
             "extra": "mean: 29.009028057911358 usec\nrounds: 14185"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "andnpatterson@gmail.com",
+            "name": "andy",
+            "username": "andnp"
+          },
+          "committer": {
+            "email": "andnpatterson@gmail.com",
+            "name": "andy",
+            "username": "andnp"
+          },
+          "distinct": true,
+          "id": "2524bbaa5cdcd8b1da815a082d5d65132981d83e",
+          "message": "ci: track performance of typical rl loop",
+          "timestamp": "2023-07-07T14:01:04-06:00",
+          "tree_id": "7f7836746d637d1de4747cf78f120703ea707c68",
+          "url": "https://github.com/andnp/ReplayTables/commit/2524bbaa5cdcd8b1da815a082d5d65132981d83e"
+        },
+        "date": 1688760140278,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "tests/test_PER.py::TestBenchmarks::test_per_add",
+            "value": 55761.0472740176,
+            "unit": "iter/sec",
+            "range": "stddev: 8.31602745655962e-7",
+            "extra": "mean: 17.933666042638333 usec\nrounds: 19763"
+          },
+          {
+            "name": "tests/test_PER.py::TestBenchmarks::test_per_sample",
+            "value": 5709.430547648146,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000057812375912271907",
+            "extra": "mean: 175.14881592034158 usec\nrounds: 3216"
+          },
+          {
+            "name": "tests/test_PrioritizedHeap.py::TestBenchmarks::test_prioritized_heap_add",
+            "value": 131231.17582142865,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000010254014725427699",
+            "extra": "mean: 7.620140517225408 usec\nrounds: 31747"
+          },
+          {
+            "name": "tests/test_PrioritizedHeap.py::TestBenchmarks::test_prioritized_heap_sample",
+            "value": 2616.9644562718886,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00004761574836579829",
+            "extra": "mean: 382.122117709078 usec\nrounds: 1903"
+          },
+          {
+            "name": "tests/test_ReplayBuffer.py::TestBenchmarks::test_replay_buffer_add",
+            "value": 810898.3396274033,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000007218633542963851",
+            "extra": "mean: 1.2332002066491914 usec\nrounds: 158731"
+          },
+          {
+            "name": "tests/test_ReplayBuffer.py::TestBenchmarks::test_replay_buffer_sample",
+            "value": 11853.60246301904,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000002026812352793641",
+            "extra": "mean: 84.36253899350916 usec\nrounds: 4193"
+          },
+          {
+            "name": "tests/test_integration.py::TestBenchmarks::test_1_step_loop",
+            "value": 60.392273876609245,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00004752104631079129",
+            "extra": "mean: 16.55840947540996 msec\nrounds: 61"
+          },
+          {
+            "name": "tests/test_integration.py::TestBenchmarks::test_3_step_loop",
+            "value": 60.5061806346213,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000028527382079347066",
+            "extra": "mean: 16.52723720967781 msec\nrounds: 62"
+          },
+          {
+            "name": "tests/utils/test_SumTree.py::TestBenchmarks::test_sumtree_update",
+            "value": 26428.959419442603,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000029123018177580566",
+            "extra": "mean: 37.83728235869721 usec\nrounds: 18349"
+          },
+          {
+            "name": "tests/utils/test_SumTree.py::TestBenchmarks::test_sumtree_sample",
+            "value": 35071.84181305166,
+            "unit": "iter/sec",
+            "range": "stddev: 9.284236329072698e-7",
+            "extra": "mean: 28.512902325758645 usec\nrounds: 15480"
           }
         ]
       }
