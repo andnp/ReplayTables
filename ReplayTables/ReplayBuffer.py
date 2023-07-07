@@ -1,7 +1,6 @@
 import numpy as np
 from abc import abstractmethod
 from typing import Any, Tuple
-from ReplayTables.Distributions import UniformDistribution
 from ReplayTables.interface import Timestep, Batch, EID, EIDs
 from ReplayTables.ingress.IndexMapper import IndexMapper
 from ReplayTables.ingress.CircularMapper import CircularMapper
@@ -77,4 +76,4 @@ class ReplayBuffer(ReplayBufferInterface):
 
     def _on_add(self, eid: EID, transition: Timestep, /, **kwargs: Any):
         idx = self._idx_mapper.add_eid(eid)
-        self._sampler.replace(idx)
+        self._sampler.replace(idx, **kwargs)

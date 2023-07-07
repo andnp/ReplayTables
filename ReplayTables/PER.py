@@ -39,13 +39,13 @@ class PrioritizedReplay(ReplayBufferInterface):
             raise NotImplementedError()
 
         idx = self._idx_mapper.eid2idx(eid)
-        self._sampler.replace(idx, priority)
+        self._sampler.replace(idx, priority=priority)
 
     def update_priorities(self, eids: EIDs, priorities: np.ndarray):
         idxs = self._idx_mapper.eids2idxs(eids)
 
         priorities = priorities ** self._c.priority_exponent
-        self._sampler.update(idxs, priorities)
+        self._sampler.update(idxs, priorities=priorities)
 
         self._max_priority = max(
             self._c.max_decay * self._max_priority,

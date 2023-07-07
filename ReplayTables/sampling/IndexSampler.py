@@ -10,7 +10,7 @@ class IndexSampler:
         self._target = UniformDistribution(0)
 
     @abstractmethod
-    def replace(self, idx: IDX) -> None:
+    def replace(self, idx: IDX, /, **kwargs: Any) -> None:
         ...
 
     @abstractmethod

@@ -10,7 +10,7 @@ class UniformSampler(IndexSampler):
         self._dist = UniformDistribution(0)
         self._max = 0
 
-    def replace(self, idx: IDX) -> None:
+    def replace(self, idx: IDX, /, **kwargs: Any) -> None:
         self._max = max(self._max, idx)
         self._dist.update(self._max + 1)
 

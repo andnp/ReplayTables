@@ -23,13 +23,15 @@ class PrioritySampler(IndexSampler):
         ])
         self._max = max_size
 
-    def replace(self, idx: IDX, priority: float) -> None:
+    def replace(self, idx: IDX, /, **kwargs: Any) -> None:
+        priority: float = kwargs['priority']
         idxs = np.array([idx])
         priorities = np.array([priority])
         self._uniform.update(idxs)
         self._p_dist.update(idxs, priorities)
 
-    def update(self, idxs: IDXs, priorities: np.ndarray, /, **kwargs: Any) -> None:
+    def update(self, idxs: IDXs, /, **kwargs: Any) -> None:
+        priorities = kwargs['priorities']
         self._uniform.update(idxs)
         self._p_dist.update(idxs, priorities)
 
