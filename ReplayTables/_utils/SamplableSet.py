@@ -30,7 +30,7 @@ class _SamplableSet:
 
     def remove(self, val: int):
         if val not in self._val2idx:
-            raise KeyError('Key not found')
+            return
 
         # the strategy here is to take the current last item
         # and place it where the deleted item was.

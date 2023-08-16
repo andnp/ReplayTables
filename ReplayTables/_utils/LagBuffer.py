@@ -16,3 +16,26 @@ class LagBuffer(Generic[T]):
         self._i = (self._i + 1) % self._maxlen
 
         return item
+
+    def last(self):
+        idx = self._i - 1
+        if idx < 0:
+            idx = self._maxlen - 1
+
+        return self._store[idx]
+
+    def modify_last(self, t: T):
+        idx = self._i - 1
+        if idx < 0:
+            idx = self._maxlen - 1
+
+        self._store[idx] = t
+
+    def flush(self):
+        for j in range(len(self._store)):
+            i = (self._i + j) % self._maxlen
+            item = self._store.get(i)
+            if item is None:
+                break
+
+            yield item

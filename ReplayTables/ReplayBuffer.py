@@ -1,76 +1,76 @@
 import numpy as np
 from abc import abstractmethod
-from typing import Any, Tuple
-from ReplayTables.interface import Timestep, Batch, EID, EIDs
+from typing import Any
+from ReplayTables.interface import Timestep, LaggedTimestep, Batch, EID, EIDs
 from ReplayTables.ingress.IndexMapper import IndexMapper
 from ReplayTables.ingress.CircularMapper import CircularMapper
+from ReplayTables.ingress.LagBuffer import LagBuffer
 from ReplayTables.sampling.IndexSampler import IndexSampler
 from ReplayTables.sampling.UniformSampler import UniformSampler
 from ReplayTables.storage.BasicStorage import BasicStorage
 from ReplayTables.storage.Storage import Storage
-from ReplayTables._utils.LagBuffer import LagBuffer
 
 class ReplayBufferInterface:
-    def __init__(self, max_size: int, lag: int, rng: np.random.Generator):
+    def __init__(self, max_size: int, rng: np.random.Generator):
         self._max_size = max_size
-        self._lag = lag
         self._rng = rng
 
         self._t = 0
-        self._lag_buffer = LagBuffer[Tuple[EID, Timestep, Any]](maxlen=lag)
-        self._idx_mapper: IndexMapper = CircularMapper(max_size + lag)
+        self._idx_mapper: IndexMapper = CircularMapper(max_size)
         self._sampler: IndexSampler = UniformSampler(self._rng)
-        self._storage: Storage = BasicStorage(max_size + lag)
+        self._storage: Storage = BasicStorage(max_size)
 
     def size(self) -> int:
-        return max(0, len(self._storage) - self._lag)
+        return max(0, len(self._storage))
 
-    def add(self, transition: Timestep, /, **kwargs: Any):
-        eid = self._next_eid()
-        idx = self._idx_mapper.add_eid(eid)
-        self._storage.add(idx, eid, transition)
+    def add(self, transition: LaggedTimestep):
+        idx = self._idx_mapper.add_eid(transition.eid)
+        n_idx = None
+        if transition.n_eid is not None:
+            n_idx = self._idx_mapper.add_eid(transition.n_eid)
 
-        last = self._lag_buffer.push((eid, transition, kwargs))
-        if last is not None:
-            self._on_add(
-                last[0],
-                last[1],
-                **last[2],
-            )
+        self._storage.add(idx, n_idx, transition)
+        self._on_add(transition)
 
-        return eid
-
-    def sample(self, n: int) -> Tuple[Batch, np.ndarray]:
+    def sample(self, n: int) -> Batch:
         idxs = self._sampler.sample(n)
-        eids = self._storage.get_eids(idxs)
+        samples = self._storage.get(idxs)
+        return samples
 
-        idx_seqs = self._idx_mapper.eids2idxs_sequence(eids, self._lag)
-
+    def isr_weights(self, eids: EIDs) -> np.ndarray:
+        idxs = self._idx_mapper.eids2idxs(eids)
         weights = self._sampler.isr_weights(idxs)
-        samples = self._storage.get(idx_seqs)
-        return samples, weights
+        return weights
 
     def get(self, eids: EIDs):
-        idx_seqs = self._idx_mapper.eids2idxs_sequence(eids, self._lag)
-        return self._storage.get(idx_seqs)
+        idxs = self._idx_mapper.eids2idxs(eids)
+        return self._storage.get(idxs)
 
-    def _next_eid(self) -> EID:
+    def next_eid(self) -> EID:
         eid: Any = self._t
         self._t += 1
         return eid
 
-    def _last_eid(self) -> EID:
+    def last_eid(self) -> EID:
         assert self._t > 0, "No previous EID!"
         last: Any = self._t - 1
         return last
 
     @abstractmethod
-    def _on_add(self, eid: EID, transition: Timestep, /, **kwargs: Any): ...
+    def _on_add(self, transition: LaggedTimestep): ...
 
 class ReplayBuffer(ReplayBufferInterface):
     def __init__(self, max_size: int, lag: int, rng: np.random.Generator):
-        super().__init__(max_size, lag, rng)
+        super().__init__(max_size, rng)
+        self._lag_buffer = LagBuffer(lag)
 
-    def _on_add(self, eid: EID, transition: Timestep, /, **kwargs: Any):
-        idx = self._idx_mapper.add_eid(eid)
-        self._sampler.replace(idx, transition, **kwargs)
+    def add_step(self, transition: Timestep):
+        for d in self._lag_buffer.add(transition):
+            self.add(d)
+
+    def flush(self):
+        self._lag_buffer.flush()
+
+    def _on_add(self, transition: LaggedTimestep):
+        idx = self._idx_mapper.add_eid(transition.eid)
+        self._sampler.replace(idx, transition)

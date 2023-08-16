@@ -14,14 +14,15 @@ class TestReplayBuffer:
 
         # should be able to simply add and sample a single data point
         d = fake_timestep(a=1, r=None)
-        buffer.add(d)
+        buffer.add_step(d)
         assert buffer.size() == 0
 
         d = fake_timestep(a=2)
-        buffer.add(d)
+        buffer.add_step(d)
         assert buffer.size() == 1
 
-        samples, weights = buffer.sample(10)
+        samples = buffer.sample(10)
+        weights = buffer.isr_weights(samples.eid)
         assert np.all(samples.a == 1)
         assert np.all(samples.eid == 0)
         assert np.all(weights == 1)
@@ -30,10 +31,10 @@ class TestReplayBuffer:
         for i in range(4):
             x = i + 3
             d = fake_timestep(a=x)
-            buffer.add(d)
+            buffer.add_step(d)
 
         assert buffer.size() == 5
-        samples, weights = buffer.sample(1000)
+        samples = buffer.sample(1000)
 
         unique = np.unique(samples.a)
         unique.sort()
@@ -41,10 +42,10 @@ class TestReplayBuffer:
         assert np.all(unique == np.array([1, 2, 3, 4, 5]))
 
         # buffer drops the oldest element when over max size
-        buffer.add(fake_timestep(a=6))
+        buffer.add_step(fake_timestep(a=6))
         assert buffer.size() == 5
 
-        samples, _ = buffer.sample(1000)
+        samples = buffer.sample(1000)
         unique = np.unique(samples.a)
         unique.sort()
         assert np.all(unique == np.array([2, 3, 4, 5, 6]))
@@ -54,19 +55,19 @@ class TestReplayBuffer:
         buffer = ReplayBuffer(5, 1, rng)
 
         d = fake_timestep(r=None)
-        buffer.add(d)
+        buffer.add_step(d)
 
         for i in range(3):
             d = fake_timestep(r=i)
-            buffer.add(d)
+            buffer.add_step(d)
 
         d = fake_timestep(x=np.ones(8), r=3, terminal=True)
-        buffer.add(d)
+        buffer.add_step(d)
 
         d = fake_timestep()
-        buffer.add(d)
+        buffer.add_step(d)
 
-        samples, _ = buffer.sample(25)
+        samples = buffer.sample(25)
         assert np.all(samples.x == 0)
         assert np.all(samples.xp[samples.terminal] == 1)
 
@@ -76,18 +77,18 @@ class TestReplayBuffer:
 
         d = fake_timestep(r=1, gamma=0.99)
         for _ in range(3):
-            buffer.add(d)
+            buffer.add_step(d)
 
-        samples, weights = buffer.sample(1)
+        samples = buffer.sample(1)
         assert np.all(samples.r == 1.99)
 
         d = fake_timestep(r=2, gamma=0, terminal=True, x=np.ones(8))
-        buffer.add(d)
+        buffer.add_step(d)
 
         d = fake_timestep(r=1)
-        buffer.add(d)
+        buffer.add_step(d)
 
-        samples, weights = buffer.sample(10)
+        samples = buffer.sample(10)
         assert np.all(samples.r == np.array([2, 2.98, 2.98, 1.99, 1.99, 1.99, 1.99, 1.99, 1.99, 2]))
         assert np.all(samples.xp[samples.terminal] == 1)
 
@@ -96,13 +97,13 @@ class TestReplayBuffer:
         buffer = ReplayBuffer(5, 1, rng)
 
         for i in range(8):
-            buffer.add(fake_timestep(a=0))
+            buffer.add_step(fake_timestep(a=0))
 
         byt = pickle.dumps(buffer)
         buffer2 = pickle.loads(byt)
 
-        s, _ = buffer.sample(3)
-        s2, _ = buffer2.sample(3)
+        s = buffer.sample(3)
+        s2 = buffer2.sample(3)
 
         assert np.all(s.a == s2.a) and np.all(s.x == s2.x)
 
@@ -116,7 +117,7 @@ class TestBenchmarks:
         d = fake_timestep(a=0)
 
         def _inner(buffer, d):
-            buffer.add(d)
+            buffer.add_step(d)
 
         benchmark(_inner, buffer, d)
 
@@ -126,7 +127,7 @@ class TestBenchmarks:
         d = fake_timestep(a=0)
 
         for _ in range(100_000):
-            buffer.add(d)
+            buffer.add_step(d)
 
         def _inner(buffer):
             buffer.sample(32)

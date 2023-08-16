@@ -10,7 +10,7 @@ class TestBenchmarks:
     def test_1_step_loop(self, benchmark):
         def rl_loop(buffer: ReplayBuffer, d):
             for _ in range(100):
-                buffer.add(d)
+                buffer.add_step(d)
                 if buffer.size() > 1:
                     _ = buffer.sample(32)
 
@@ -29,7 +29,7 @@ class TestBenchmarks:
     def test_3_step_loop(self, benchmark):
         def rl_loop(buffer: ReplayBuffer, d):
             for _ in range(100):
-                buffer.add(d)
+                buffer.add_step(d)
                 if buffer.size() > 1:
                     _ = buffer.sample(32)
 

@@ -1,6 +1,6 @@
 from abc import abstractmethod
 from typing import Any
-from ReplayTables.interface import Batch, Timestep, TaggedTimestep, EID, EIDs, IDX, IDXs
+from ReplayTables.interface import Batch, LaggedTimestep, EIDs, IDX, IDXs
 
 class Storage:
     def __init__(self, max_size: int):
@@ -15,19 +15,19 @@ class Storage:
         ...
 
     @abstractmethod
-    def get(self, idxs_seqs: IDXs) -> Batch:
+    def get(self, idxs: IDXs) -> Batch:
         ...
 
     @abstractmethod
-    def get_item(self, idx: IDX) -> TaggedTimestep:
+    def get_item(self, idx: IDX) -> LaggedTimestep:
         ...
 
     @abstractmethod
-    def set(self, idx: IDX, eid: EID, transition: Timestep):
+    def set(self, idx: IDX, n_idx: IDX | None, transition: LaggedTimestep):
         ...
 
     @abstractmethod
-    def add(self, idx: IDX, eid: EID, transition: Timestep, /, **kwargs: Any) -> None:
+    def add(self, idx: IDX, n_idx: IDX | None, transition: LaggedTimestep, /, **kwargs: Any) -> None:
         ...
 
     @abstractmethod

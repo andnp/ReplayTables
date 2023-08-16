@@ -1,7 +1,7 @@
 import numpy as np
 from abc import abstractmethod
 from typing import Any
-from ReplayTables.interface import IDX, IDXs, Timestep, Batch
+from ReplayTables.interface import IDX, IDXs, LaggedTimestep, Batch
 from ReplayTables.Distributions import UniformDistribution
 
 class IndexSampler:
@@ -10,7 +10,7 @@ class IndexSampler:
         self._target = UniformDistribution(0)
 
     @abstractmethod
-    def replace(self, idx: IDX, transition: Timestep, /, **kwargs: Any) -> None:
+    def replace(self, idx: IDX, transition: LaggedTimestep, /, **kwargs: Any) -> None:
         ...
 
     @abstractmethod

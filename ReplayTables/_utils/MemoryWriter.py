@@ -7,12 +7,12 @@ from concurrent.futures import ThreadPoolExecutor, Future
 @try2jit()
 def _update(tree: NList[np.ndarray], dim: int, idxs: np.ndarray, values: np.ndarray):
     for idx, value in zip(idxs, values):
-        sub_idx = idx
+        sub_idx = np.array(idx, dtype=np.uint64)
         old = tree[0][dim, idx]
 
         for i in range(len(tree)):
             tree[i][dim, sub_idx] += value - old
-            sub_idx = int(sub_idx // 2)
+            sub_idx = np.array(sub_idx // 2, dtype=np.uint64)
 
 class MemoryWriter:
     def __init__(self, mem: NList[np.ndarray], dims: int):

@@ -1,79 +1,118 @@
 import numpy as np
+import ReplayTables._utils.numpy as npu
+
 from typing import Any, Dict
-from ReplayTables.interface import Batch, EIDs, Timestep, TaggedTimestep, EID, IDX, IDXs
+from ReplayTables.interface import Batch, EIDs, LaggedTimestep, IDX, IDXs
 from ReplayTables.storage.Storage import Storage
 
 from ReplayTables._utils.jit import try2jit
 
 class BasicStorage(Storage):
-    def __init__(self, max_size: int, sample_obs: np.ndarray | None = None, action_dtype: Any = np.int_):
+    def __init__(self, max_size: int):
         super().__init__(max_size)
 
-        self._state_store: Dict[IDX, np.ndarray] = {}
-        self._eids = np.zeros(max_size, dtype=np.uint64)
-        self._a = np.zeros(max_size, dtype=action_dtype)
-        self._r = np.zeros(max_size)
-        self._term = np.zeros(max_size, dtype=np.bool_)
-        self._gamma = np.zeros(max_size)
+        self._built = False
 
-        self._zero_obs: np.ndarray | None = None
-        if sample_obs is not None:
-            self._zero_obs = np.zeros_like(sample_obs)
+        self._idx2n_idx = np.zeros(max_size, dtype=np.uint64)
 
-    def add(self, idx: IDX, eid: EID, transition: Timestep, /, **kwargs: Any):
-        if transition.x is not None:
+        self._extras: Dict[IDX, Any] = {}
+        self._eids = np.zeros(max_size + 1, dtype=np.uint64)
+        self._r = np.empty(max_size, dtype=np.float_)
+        self._term = np.empty(max_size, dtype=np.bool_)
+        self._gamma = np.empty(max_size, dtype=np.float_)
+
+        # building dummy values here for type inference
+        self._state_store = np.empty(0)
+        self._a = np.zeros(0)
+
+    def _deferred_init(self, transition: LaggedTimestep):
+        self._built = True
+
+        shape = transition.x.shape
+        self._state_store = np.empty((self._max_size + 1, ) + shape, dtype=transition.x.dtype)
+        self._a = np.empty(self._max_size, dtype=npu.get_dtype(transition.a))
+
+        self._state_store[self._max_size] = 0
+
+    def add(self, idx: IDX, n_idx: IDX | None, transition: LaggedTimestep, /, **kwargs: Any):
+        if not self._built: self._deferred_init(transition)
+
+        # let's try to avoid copying observation vectors repeatedly
+        # this should cut the number of copies in half
+        old_eid = self._eids[idx]
+        if transition.eid == 0 or old_eid != transition.eid:
+            self._eids[idx] = transition.eid
             self._state_store[idx] = transition.x
-        else:
-            assert self._zero_obs is not None, 'Need to specify a default sample observation is terminal states are marked as None'
-            self._state_store[idx] = self._zero_obs
 
         self._r[idx] = transition.r
         self._a[idx] = transition.a
         self._term[idx] = transition.terminal
         self._gamma[idx] = transition.gamma
-        self._eids[idx] = eid
+        self._extras[idx] = transition.extra
 
-    def set(self, idx: IDX, eid: EID, transition: Timestep):
-        if transition.x is not None:
-            self._state_store[idx] = transition.x
+        if n_idx is not None:
+            assert transition.n_x is not None
+            assert transition.n_eid is not None
+
+            self._idx2n_idx[idx] = n_idx
+            self._eids[n_idx] = transition.n_eid
+            self._state_store[n_idx] = transition.n_x
         else:
-            assert self._zero_obs is not None, 'Need to specify a default sample observation is terminal states are marked as None'
-            self._state_store[idx] = self._zero_obs
+            self._idx2n_idx[idx] = self._max_size
 
+    def set(self, idx: IDX, n_idx: IDX | None, transition: LaggedTimestep):
+        if not self._built: self._deferred_init(transition)
+
+        self._state_store[idx] = transition.x
+        self._eids[idx] = transition.eid
         self._r[idx] = transition.r
         self._a[idx] = transition.a
         self._term[idx] = transition.terminal
         self._gamma[idx] = transition.gamma
-        self._eids[idx] = eid
+        self._extras[idx] = transition.extra
 
-    def get(self, idx_seqs: IDXs) -> Batch:
-        idxs = idx_seqs[0]
+        if n_idx is not None:
+            assert transition.n_x is not None
+            assert transition.n_eid is not None
 
-        r, gamma, term, n_idxs = _return(idx_seqs, self._r, self._term, self._gamma)
+            self._idx2n_idx[idx] = n_idx
+            self._eids[n_idx] = transition.n_eid
+            self._state_store[n_idx] = transition.n_x
+        else:
+            self._idx2n_idx[idx] = self._max_size
 
-        x = np.stack([self._state_store[idx] for idx in idxs], axis=0)
-        xp = np.stack([self._state_store[idx] for idx in n_idxs], axis=0)
-
+    def get(self, idxs: IDXs) -> Batch:
         eids: Any = self._eids[idxs]
+        n_idxs = self._idx2n_idx[idxs]
+
+        x = self._state_store[idxs]
+        xp = self._state_store[n_idxs]
+
         return Batch(
             x=x,
             a=self._a[idxs],
-            r=r,
-            gamma=gamma,
-            terminal=term,
+            r=self._r[idxs],
+            gamma=self._gamma[idxs],
+            terminal=self._term[idxs],
             eid=eids,
             xp=xp,
         )
 
-    def get_item(self, idx: IDX) -> TaggedTimestep:
+    def get_item(self, idx: IDX) -> LaggedTimestep:
+        n_idx = self._idx2n_idx[idx]
         eid: Any = self._eids[idx]
-        return TaggedTimestep(
+        n_eid: Any = None if n_idx == self._max_size else self._eids[n_idx]
+
+        return LaggedTimestep(
             x=self._state_store[idx],
             a=self._a[idx],
             r=self._r[idx],
             gamma=self._gamma[idx],
             terminal=self._term[idx],
             eid=eid,
+            extra=self._extras[idx],
+            n_eid=n_eid,
+            n_x=self._state_store[n_idx],
         )
 
     def get_eids(self, idxs: IDXs) -> EIDs:
@@ -81,10 +120,10 @@ class BasicStorage(Storage):
         return eids
 
     def __delitem__(self, idx: IDX):
-        del self._state_store[idx]
+        del self._extras[idx]
 
     def __len__(self):
-        return len(self._state_store)
+        return len(self._extras)
 
 @try2jit()
 def _return(idx_seqs: np.ndarray, r: np.ndarray, term: np.ndarray, gamma: np.ndarray):
