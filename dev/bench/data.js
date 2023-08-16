@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1691639637609,
+  "lastUpdate": 1692151139923,
   "repoUrl": "https://github.com/andnp/ReplayTables",
   "entries": {
     "Python Benchmark with pytest-benchmark": [
@@ -1206,6 +1206,86 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 0.0000025159759795594415",
             "extra": "mean: 28.54327463603858 usec\nrounds: 16287"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "andnpatterson@gmail.com",
+            "name": "andy",
+            "username": "andnp"
+          },
+          "committer": {
+            "email": "andnpatterson@gmail.com",
+            "name": "Andy Patterson",
+            "username": "andnp"
+          },
+          "distinct": true,
+          "id": "a33d33a9b1a46f5d87a346fb7f103383fe4b236d",
+          "message": "fix: rework high-level api\n\nBREAKING CHANGE: this change moves around some public-facing components\nsuch as the LagBuffer, which is now more appropriately marked as an\ningress utility. This change also incorporates the LagBuffer as an\noptional component of the replay buffer, allowing implementation of\nreplay directly from the standard RlGlue interface without needing to\nexplicitly maintain multiple experience buffers.\n\nThis change reverts the prior set of changes which attempted to define\nthe replay buffer over raw experience tuples (S, A, R) instead of\nlagged experience tuples (S, A, R, S')---however this change still keeps\nthe primary motivation of the prior work which is ensuring that states\nare stored only once in memory in order to reduce memory overhead.\nManipulating raw experience tuples turned out to be too challenging and\ntoo expensive---for instance requiring computing n-step returns at\nsample time instead of at add time.",
+          "timestamp": "2023-08-15T19:57:32-06:00",
+          "tree_id": "eac91ad3ecec2e37a0e0afec3733b5a92b2d76e7",
+          "url": "https://github.com/andnp/ReplayTables/commit/a33d33a9b1a46f5d87a346fb7f103383fe4b236d"
+        },
+        "date": 1692151139536,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "tests/test_PER.py::TestBenchmarks::test_per_add",
+            "value": 33094.89215198964,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000024165568767220343",
+            "extra": "mean: 30.216143186309818 usec\nrounds: 6076"
+          },
+          {
+            "name": "tests/test_PER.py::TestBenchmarks::test_per_sample",
+            "value": 14928.92350025782,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000005169230978672167",
+            "extra": "mean: 66.98406619758819 usec\nrounds: 6964"
+          },
+          {
+            "name": "tests/test_ReplayBuffer.py::TestBenchmarks::test_replay_buffer_add",
+            "value": 114816.68467292089,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000004646573316623687",
+            "extra": "mean: 8.709535577069717 usec\nrounds: 16921"
+          },
+          {
+            "name": "tests/test_ReplayBuffer.py::TestBenchmarks::test_replay_buffer_sample",
+            "value": 46370.69970437628,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000001715176988504781",
+            "extra": "mean: 21.565342045197216 usec\nrounds: 9183"
+          },
+          {
+            "name": "tests/test_integration.py::TestBenchmarks::test_1_step_loop",
+            "value": 327.3975228517933,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000015431923963599307",
+            "extra": "mean: 3.0543908557691846 msec\nrounds: 312"
+          },
+          {
+            "name": "tests/test_integration.py::TestBenchmarks::test_3_step_loop",
+            "value": 325.54329626819356,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000018762775482069897",
+            "extra": "mean: 3.071788027777928 msec\nrounds: 324"
+          },
+          {
+            "name": "tests/utils/test_SumTree.py::TestBenchmarks::test_sumtree_update",
+            "value": 18440.17247086293,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000012467356749222208",
+            "extra": "mean: 54.22942771170317 usec\nrounds: 16448"
+          },
+          {
+            "name": "tests/utils/test_SumTree.py::TestBenchmarks::test_sumtree_sample",
+            "value": 35027.94393469999,
+            "unit": "iter/sec",
+            "range": "stddev: 8.096600073315956e-7",
+            "extra": "mean: 28.54863539419345 usec\nrounds: 14347"
           }
         ]
       }
