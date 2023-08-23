@@ -18,23 +18,19 @@ class ReplayBufferInterface:
         self._t = 0
         self._idx_mapper: IndexMapper = CircularMapper(max_size)
         self._sampler: IndexSampler = UniformSampler(self._rng)
-        self._storage: Storage = BasicStorage(max_size)
+        self._storage: Storage = BasicStorage(max_size, idx_mapper=self._idx_mapper)
 
     def size(self) -> int:
         return max(0, len(self._storage))
 
     def add(self, transition: LaggedTimestep):
-        idx = self._idx_mapper.add_eid(transition.eid)
-        n_idx = None
-        if transition.n_eid is not None:
-            n_idx = self._idx_mapper.add_eid(transition.n_eid)
-
-        self._storage.add(idx, n_idx, transition)
+        self._storage.add(transition)
         self._on_add(transition)
 
     def sample(self, n: int) -> Batch:
         idxs = self._sampler.sample(n)
-        samples = self._storage.get(idxs)
+        eids = self._storage.get_eids(idxs)
+        samples = self._storage.get(eids)
         return samples
 
     def isr_weights(self, eids: EIDs) -> np.ndarray:
@@ -43,8 +39,7 @@ class ReplayBufferInterface:
         return weights
 
     def get(self, eids: EIDs):
-        idxs = self._idx_mapper.eids2idxs(eids)
-        return self._storage.get(idxs)
+        return self._storage.get(eids)
 
     def next_eid(self) -> EID:
         eid: Any = self._t

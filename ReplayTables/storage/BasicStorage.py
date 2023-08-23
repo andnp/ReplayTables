@@ -2,12 +2,13 @@ import numpy as np
 import ReplayTables._utils.numpy as npu
 
 from typing import Any, Dict
-from ReplayTables.interface import Batch, EIDs, LaggedTimestep, IDX, IDXs
+from ReplayTables.interface import Batch, EIDs, LaggedTimestep, IDX, EID, IDXs
 from ReplayTables.storage.Storage import Storage
+from ReplayTables.ingress.IndexMapper import IndexMapper
 
 class BasicStorage(Storage):
-    def __init__(self, max_size: int):
-        super().__init__(max_size)
+    def __init__(self, max_size: int, idx_mapper: IndexMapper | None = None):
+        super().__init__(max_size, idx_mapper)
 
         self._built = False
 
@@ -32,8 +33,10 @@ class BasicStorage(Storage):
 
         self._state_store[self._max_size] = 0
 
-    def add(self, idx: IDX, n_idx: IDX | None, transition: LaggedTimestep, /, **kwargs: Any):
+    def add(self, transition: LaggedTimestep, /, **kwargs: Any):
         if not self._built: self._deferred_init(transition)
+
+        idx = self._idx_mapper.add_eid(transition.eid)
 
         # let's try to avoid copying observation vectors repeatedly
         # this should cut the number of copies in half
@@ -48,9 +51,9 @@ class BasicStorage(Storage):
         self._gamma[idx] = transition.gamma
         self._extras[idx] = transition.extra
 
-        if n_idx is not None:
+        if transition.n_eid is not None:
             assert transition.n_x is not None
-            assert transition.n_eid is not None
+            n_idx = self._idx_mapper.add_eid(transition.n_eid)
 
             self._idx2n_idx[idx] = n_idx
             self._eids[n_idx] = transition.n_eid
@@ -58,8 +61,10 @@ class BasicStorage(Storage):
         else:
             self._idx2n_idx[idx] = self._max_size
 
-    def set(self, idx: IDX, n_idx: IDX | None, transition: LaggedTimestep):
+    def set(self, transition: LaggedTimestep):
         if not self._built: self._deferred_init(transition)
+
+        idx = self._idx_mapper.add_eid(transition.eid)
 
         self._store_state(idx, transition.x)
         self._eids[idx] = transition.eid
@@ -69,9 +74,9 @@ class BasicStorage(Storage):
         self._gamma[idx] = transition.gamma
         self._extras[idx] = transition.extra
 
-        if n_idx is not None:
+        if transition.n_eid is not None:
             assert transition.n_x is not None
-            assert transition.n_eid is not None
+            n_idx = self._idx_mapper.add_eid(transition.n_eid)
 
             self._idx2n_idx[idx] = n_idx
             self._eids[n_idx] = transition.n_eid
@@ -79,8 +84,8 @@ class BasicStorage(Storage):
         else:
             self._idx2n_idx[idx] = self._max_size
 
-    def get(self, idxs: IDXs) -> Batch:
-        eids: Any = self._eids[idxs]
+    def get(self, eids: EIDs) -> Batch:
+        idxs = self._idx_mapper.eids2idxs(eids)
         n_idxs = self._idx2n_idx[idxs]
 
         x = self._load_states(idxs)
@@ -96,9 +101,9 @@ class BasicStorage(Storage):
             xp=xp,
         )
 
-    def get_item(self, idx: IDX) -> LaggedTimestep:
+    def get_item(self, eid: EID) -> LaggedTimestep:
+        idx = self._idx_mapper.eid2idx(eid)
         n_idx = self._idx2n_idx[idx]
-        eid: Any = self._eids[idx]
         n_eid: Any = None if n_idx == self._max_size else self._eids[n_idx]
 
         return LaggedTimestep(
@@ -117,11 +122,16 @@ class BasicStorage(Storage):
         eids: Any = self._eids[idxs]
         return eids
 
-    def __delitem__(self, idx: IDX):
+    def __delitem__(self, eid: EID):
+        idx = self._idx_mapper.eid2idx(eid)
         del self._extras[idx]
 
     def __len__(self):
         return len(self._extras)
+
+    def __contains__(self, eid: EID):
+        idx = self._idx_mapper.eid2idx(eid)
+        return self._eids[idx] == eid
 
     def _store_state(self, idx: IDX, state: np.ndarray):
         self._state_store[idx] = state
