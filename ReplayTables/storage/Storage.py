@@ -6,6 +6,10 @@ class Storage:
     def __init__(self, max_size: int):
         self._max_size = max_size
 
+    @property
+    def max_size(self):
+        return self._max_size
+
     @abstractmethod
     def __len__(self) -> int:
         ...

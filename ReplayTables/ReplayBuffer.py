@@ -56,6 +56,10 @@ class ReplayBufferInterface:
         last: Any = self._t - 1
         return last
 
+    def use_storage(self, storage: Storage):
+        assert self._max_size <= storage.max_size
+        self._storage = storage
+
     @abstractmethod
     def _on_add(self, transition: LaggedTimestep): ...
 
