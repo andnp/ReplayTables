@@ -58,7 +58,7 @@ class SumTree:
         self._tree: NList[np.ndarray] = NList(layers)
 
         # cached to avoid recreating this space in memory repeatedly
-        self._u = np.ones(dims)
+        self._u = np.ones(dims, dtype=np.float64)
 
     @property
     def dims(self):

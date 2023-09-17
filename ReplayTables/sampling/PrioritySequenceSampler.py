@@ -92,7 +92,7 @@ class PrioritizedSequenceDistribution(PrioritizedDistribution):
 @try2jit()
 def _update(tree: NList[np.ndarray], d: int, size: int, idxs: np.ndarray, priorities: np.ndarray, comb: str, trace: np.ndarray, terms: Set[int]):
     depth = len(trace)
-    out_idxs = np.empty(depth * len(idxs), dtype=np.uint64)
+    out_idxs = np.empty(depth * len(idxs), dtype=np.int64)
     out = np.empty(depth * len(idxs))
 
     def c(a: float, b: float):
@@ -114,6 +114,6 @@ def _update(tree: NList[np.ndarray], d: int, size: int, idxs: np.ndarray, priori
             j += 1
 
     return (
-        np.concatenate((idxs, out_idxs[:j])).astype(np.uint64),
+        np.concatenate((idxs, out_idxs[:j])).astype(np.int64),
         np.concatenate((priorities, out[:j])),
     )
