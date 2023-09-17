@@ -1,6 +1,6 @@
 import lz4.frame
 import numpy as np
-import ReplayTables._utils.numpy as npu
+import ReplayTables._utils.np as npu
 
 from typing import Dict
 from concurrent.futures import ThreadPoolExecutor, Future

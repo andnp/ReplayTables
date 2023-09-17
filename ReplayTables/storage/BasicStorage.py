@@ -1,5 +1,5 @@
 import numpy as np
-import ReplayTables._utils.numpy as npu
+import ReplayTables._utils.np as npu
 
 from typing import Any, Dict
 from ReplayTables.interface import Batch, EIDs, LaggedTimestep, IDX, EID, IDXs
