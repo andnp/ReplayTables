@@ -64,21 +64,6 @@ class TestSumTree:
         for i in range(1, 10):
             assert np.isclose(c[i] / c[i - 1], 2, atol=0.1)
 
-    def test_threaded_writer(self):
-        tree = SumTree(10_000, dims=3, fast_mode=True)
-
-        idxs = np.arange(1000)
-        vals1 = np.arange(1000) * 1.1
-        vals2 = vals1 * 2
-        tree.update(0, idxs, vals1)
-        tree.update(0, idxs, vals1)
-        tree.update(0, idxs, vals2)
-
-        tree.sync()
-
-        s = vals2.sum()
-        assert np.isclose(tree.total(), s)
-
     def test_pickleable(self):
         tree = SumTree(123, dims=2)
         tree.update(0, np.arange(123), np.arange(123))

@@ -2,7 +2,6 @@ from typing import Iterable, Optional
 import numpy as np
 from numba.typed import List as NList
 from ReplayTables._utils.jit import try2jit, try2vectorize
-from ReplayTables._utils.MemoryWriter import MemoryWriter, ThreadedWriter
 
 W = Optional[np.ndarray]
 
@@ -46,7 +45,7 @@ def query(tree: NList[np.ndarray], size: int, weights: np.ndarray, values: np.nd
 
 
 class SumTree:
-    def __init__(self, size: int, dims: int = 1, fast_mode: bool = False, _defer_build: bool = False):
+    def __init__(self, size: int, dims: int = 1, _defer_build: bool = False):
         self._size = size
         self._dims = dims
 
@@ -59,7 +58,6 @@ class SumTree:
 
         self._tree: NList[np.ndarray] = NList(layers)
 
-        self._writer = ThreadedWriter(self._tree, dims) if fast_mode else MemoryWriter(self._tree, dims)
         # cached to avoid recreating this space in memory repeatedly
         self._u = np.ones(dims)
 
@@ -76,10 +74,18 @@ class SumTree:
         return self._tree
 
     def update(self, dim: int, idxs: Iterable[int], values: Iterable[float]):
-        a_idxs = np.asarray(idxs)
-        a_values = np.asarray(values)
+        a_idxs = np.asarray(idxs, dtype=np.uint64)
+        a_values = np.asarray(values, dtype=np.float64)
 
-        self._writer.write(dim, a_idxs, a_values)
+        _update(self._tree, dim, a_idxs, a_values)
+
+    def update_single(self, dim: int, idx: int, value: float):
+        _update(
+            self._tree,
+            dim,
+            np.array([idx], dtype=np.uint64),
+            np.array([value], dtype=np.float64),
+        )
 
     def get_value(self, dim: int, idx: int) -> float:
         return self._tree[0][dim, idx]
@@ -109,9 +115,6 @@ class SumTree:
         rs = rng.uniform(0, t, size=n)
         return query(self._tree, self._size, w_, rs)
 
-    def sync(self):
-        self._writer.sync()
-
     def _get_w(self, w: W = None):
         if w is None:
             return self._u
@@ -128,7 +131,6 @@ class SumTree:
     def __setstate__(self, state):
         self.__init__(state['size'], state['dims'], _defer_build=True)
         self._tree = NList(state['memory'])
-        self._writer._mem = self._tree
 
 @try2jit()
 def _safe_invert(arr: np.ndarray):
@@ -137,3 +139,13 @@ def _safe_invert(arr: np.ndarray):
         out[i] = 0 if arr[i] == 0 else 1 / arr[i]
 
     return out
+
+@try2jit()
+def _update(tree: NList[np.ndarray], dim: int, idxs: np.ndarray, values: np.ndarray):
+    for idx, value in zip(idxs, values):
+        sub_idx = np.array(idx, dtype=np.uint64)
+        old = tree[0][dim, idx]
+
+        for i in range(len(tree)):
+            tree[i][dim, sub_idx] += value - old
+            sub_idx = np.array(sub_idx // 2, dtype=np.uint64)
