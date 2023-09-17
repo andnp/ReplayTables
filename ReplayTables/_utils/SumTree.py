@@ -28,16 +28,15 @@ def _bound(x: int, ma: int):
 
 @try2jit()
 def query(tree: NList[np.ndarray], size: int, weights: np.ndarray, values: np.ndarray) -> np.ndarray:
-    totals = np.zeros(len(values))
+    totals = np.zeros(len(values), dtype=np.float64)
     idxs = np.zeros(len(values), dtype=np.int64)
+
     for i in range(len(tree) - 2, -1, -1):
         layer = tree[i]
 
         idxs = idxs * 2
         lefts = weights.dot(layer[:, idxs])
-        rights = weights.dot(layer[:, idxs + 1])
-        mask = lefts <= (values - totals)
-        mask &= rights > 0
+        mask = lefts < (values - totals)
         totals = totals + mask * lefts
         idxs = idxs + mask
 
@@ -54,7 +53,7 @@ class SumTree:
         layers = []
         if not _defer_build:
             for i in range(int(np.log2(self._total_size)), -1, -1):
-                layers.append(np.zeros((dims, 2**i)))
+                layers.append(np.zeros((dims, 2**i), dtype=np.float64))
 
         self._tree: NList[np.ndarray] = NList(layers)
 
@@ -74,16 +73,16 @@ class SumTree:
         return self._tree
 
     def update(self, dim: int, idxs: Iterable[int], values: Iterable[float]):
-        a_idxs = np.asarray(idxs, dtype=np.uint64)
+        a_idxs = np.asarray(idxs, dtype=np.int64)
         a_values = np.asarray(values, dtype=np.float64)
 
-        _update(self._tree, dim, a_idxs, a_values)
+        update(self._tree, dim, a_idxs, a_values)
 
     def update_single(self, dim: int, idx: int, value: float):
-        _update(
+        update(
             self._tree,
             dim,
-            np.array([idx], dtype=np.uint64),
+            np.array([idx], dtype=np.int64),
             np.array([value], dtype=np.float64),
         )
 
@@ -139,13 +138,3 @@ def _safe_invert(arr: np.ndarray):
         out[i] = 0 if arr[i] == 0 else 1 / arr[i]
 
     return out
-
-@try2jit()
-def _update(tree: NList[np.ndarray], dim: int, idxs: np.ndarray, values: np.ndarray):
-    for idx, value in zip(idxs, values):
-        sub_idx = np.array(idx, dtype=np.uint64)
-        old = tree[0][dim, idx]
-
-        for i in range(len(tree)):
-            tree[i][dim, sub_idx] += value - old
-            sub_idx = np.array(sub_idx // 2, dtype=np.uint64)
