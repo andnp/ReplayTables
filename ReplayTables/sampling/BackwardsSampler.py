@@ -1,22 +1,26 @@
 import numpy as np
-from typing import Any, Set
+from typing import Any
 from ReplayTables.sampling.IndexSampler import IndexSampler
-from ReplayTables.interface import IDX, IDXs, LaggedTimestep, Batch
-from ReplayTables._utils.jit import try2jit
+from ReplayTables.storage.Storage import Storage
+from ReplayTables.ingress.IndexMapper import IndexMapper
+from ReplayTables.interface import IDX, IDXs, EIDs, LaggedTimestep, Batch
+from ReplayTables.sampling.tools import back_sequence, in_set
+
 
 class BackwardsSampler(IndexSampler):
     def __init__(
         self,
+        rng: np.random.Generator,
+        storage: Storage,
+        mapper: IndexMapper,
         jump: int,
         reset_probability: float,
-        rng: np.random.Generator,
     ) -> None:
-        super().__init__(rng)
+        super().__init__(rng, storage, mapper)
         self._reset = reset_probability
         self._jump = jump
         self._batch_size: int | None = None
-        self._prior_idxs: IDXs | None = None
-        self._size = 0
+        self._prior_eids: EIDs | None = None
 
         self._terminal = set[int]()
         # numba needs help with type inference
@@ -24,8 +28,6 @@ class BackwardsSampler(IndexSampler):
         self._terminal.add(-1)
 
     def replace(self, idx: IDX, transition: LaggedTimestep, /, **kwargs: Any) -> None:
-        self._size = max(self._size, idx + 1)
-
         self._terminal.discard(idx)
         if transition.terminal:
             self._terminal.add(idx)
@@ -37,37 +39,27 @@ class BackwardsSampler(IndexSampler):
         return np.ones(len(idxs))
 
     def sample(self, n: int) -> IDXs:
-        if self._prior_idxs is None or self._batch_size != n:
-            idxs: Any = self._rng.integers(0, self._size + 1, size=n)
-            self._prior_idxs = idxs
+        idxs: Any = self._rng.integers(0, self._mapper.size, size=n)
+        reset_eids = self._storage.meta.get_items_by_idx(idxs).eids
+
+        if self._prior_eids is None or self._batch_size != n:
+            self._prior_eids = reset_eids
             self._batch_size = n
             return idxs
 
-        idxs = _get_predecessors(
-            self._rng,
-            self._prior_idxs,
-            self._size,
-            self._reset,
-            self._jump,
-            self._terminal,
-        )
-        self._prior_idxs = idxs
-        return idxs
+        eids: Any = self._prior_eids - self._jump
 
-@try2jit()
-def _get_predecessors(rng: np.random.Generator, prior: IDXs, size: int, reset: float, jump: int, terms: Set[int]):
-    n = len(prior)
-    idxs: Any = rng.integers(0, size, size=n)
+        back_seq = back_sequence(self._prior_eids, self._jump)
+        back_seq = back_seq.reshape(n * self._jump)
 
-    mask = rng.random(size=n) < reset
+        is_term = in_set(back_seq, self._terminal)
+        is_term = is_term.reshape((n, self._jump))
+        is_term = np.any(is_term, axis=1)
 
-    predecessors = prior
-    for i in range(n):
-        for _ in range(jump):
-            predecessors[i] = (predecessors[i] - 1) % size
-            if predecessors[i] in terms:
-                mask[i] = 1
-                break
+        is_valid = self._mapper.has_eids(eids)
+        should_reset = is_term | (1 - is_valid) | (self._rng.random(size=n) < self._reset)
 
-    new_idxs = mask * idxs + (1 - mask) * predecessors
-    return new_idxs.astype(np.uint64)
+        new_eids = (1 - should_reset) * eids + should_reset * reset_eids
+        self._prior_eids = new_eids
+
+        return self._mapper.eids2idxs(new_eids)

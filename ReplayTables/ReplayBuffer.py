@@ -1,7 +1,7 @@
 import numpy as np
 from abc import abstractmethod
 from typing import Any
-from ReplayTables.interface import Timestep, LaggedTimestep, Batch, EID, EIDs
+from ReplayTables.interface import Timestep, LaggedTimestep, Batch, EID, EIDs, Item
 from ReplayTables.ingress.IndexMapper import IndexMapper
 from ReplayTables.ingress.CircularMapper import CircularMapper
 from ReplayTables.ingress.LagBuffer import LagBuffer
@@ -17,20 +17,20 @@ class ReplayBufferInterface:
 
         self._t = 0
         self._idx_mapper: IndexMapper = CircularMapper(max_size)
-        self._sampler: IndexSampler = UniformSampler(self._rng)
-        self._storage: Storage = BasicStorage(max_size, idx_mapper=self._idx_mapper)
+        self._storage: Storage = BasicStorage(max_size)
+        self._sampler: IndexSampler = UniformSampler(self._rng, self._storage, self._idx_mapper)
 
     def size(self) -> int:
         return max(0, len(self._storage))
 
     def add(self, transition: LaggedTimestep):
-        self._storage.add(transition)
-        self._on_add(transition)
+        idx = self._idx_mapper.add_eid(transition.eid)
+        item = self._storage.add(idx, transition)
+        self._on_add(item, transition)
 
     def sample(self, n: int) -> Batch:
         idxs = self._sampler.sample(n)
-        eids = self._storage.get_eids(idxs)
-        samples = self._storage.get(eids)
+        samples = self._storage.get(idxs)
         return samples
 
     def isr_weights(self, eids: EIDs) -> np.ndarray:
@@ -39,7 +39,8 @@ class ReplayBufferInterface:
         return weights
 
     def get(self, eids: EIDs):
-        return self._storage.get(eids)
+        idxs = self._idx_mapper.eids2idxs(eids)
+        return self._storage.get(idxs)
 
     def next_eid(self) -> EID:
         eid: Any = self._t
@@ -56,7 +57,7 @@ class ReplayBufferInterface:
         self._storage = storage
 
     @abstractmethod
-    def _on_add(self, transition: LaggedTimestep): ...
+    def _on_add(self, item: Item, transition: LaggedTimestep): ...
 
 class ReplayBuffer(ReplayBufferInterface):
     def __init__(self, max_size: int, lag: int, rng: np.random.Generator):
@@ -70,6 +71,5 @@ class ReplayBuffer(ReplayBufferInterface):
     def flush(self):
         self._lag_buffer.flush()
 
-    def _on_add(self, transition: LaggedTimestep):
-        idx = self._idx_mapper.add_eid(transition.eid)
-        self._sampler.replace(idx, transition)
+    def _on_add(self, item: Item, transition: LaggedTimestep):
+        self._sampler.replace(item.idx, transition)

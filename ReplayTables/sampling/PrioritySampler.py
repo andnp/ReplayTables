@@ -1,27 +1,29 @@
 import numpy as np
 from typing import Any
-from ReplayTables.sampling.IndexSampler import IndexSampler
 from ReplayTables.Distributions import MixinUniformDistribution, SubDistribution, PrioritizedDistribution, MixtureDistribution
 from ReplayTables.interface import IDX, IDXs, LaggedTimestep, Batch
+from ReplayTables.ingress.IndexMapper import IndexMapper
+from ReplayTables.sampling.IndexSampler import IndexSampler
+from ReplayTables.storage.Storage import Storage
 
 class PrioritySampler(IndexSampler):
     def __init__(
         self,
-        uniform_probability: float,
-        max_size: int,
         rng: np.random.Generator,
+        storage: Storage,
+        mapper: IndexMapper,
+        uniform_probability: float,
     ) -> None:
-        super().__init__(rng)
+        super().__init__(rng, storage, mapper)
 
-        self._target.update(max_size)
+        self._target.update(self._max_size)
 
         self._uniform = MixinUniformDistribution()
         self._p_dist = PrioritizedDistribution()
-        self._dist = MixtureDistribution(max_size, dists=[
+        self._dist = MixtureDistribution(self._max_size, dists=[
             SubDistribution(d=self._p_dist, p=1 - uniform_probability),
             SubDistribution(d=self._uniform, p=uniform_probability)
         ])
-        self._size = max_size
 
     def replace(self, idx: IDX, transition: LaggedTimestep, /, **kwargs: Any) -> None:
         idxs = np.array([idx])

@@ -5,7 +5,7 @@ import ReplayTables._utils.np as npu
 from typing import Dict
 from concurrent.futures import ThreadPoolExecutor, Future
 
-from ReplayTables.interface import LaggedTimestep
+from ReplayTables.interface import LaggedTimestep, SIDX, SIDXs
 from ReplayTables.storage.BasicStorage import BasicStorage
 
 class CompressedStorage(BasicStorage):
@@ -31,20 +31,24 @@ class CompressedStorage(BasicStorage):
             self._locks[idx].result()
             del self._locks[idx]
 
-    def _store_state(self, idx: int, state: np.ndarray):
+    def _store_state(self, idx: SIDX, state: np.ndarray):
         def _inner(data):
             self._state_store[idx] = lz4.frame.compress(data)
 
         self._wait(idx)
         self._locks[idx] = self._tpe.submit(_inner, state)
 
-    def _load_state(self, idx: int) -> np.ndarray:
+    def _load_state(self, idx: SIDX) -> np.ndarray:
         self._wait(idx)
         raw = lz4.frame.decompress(self._state_store[idx])
         return np.frombuffer(raw, dtype=self._dtype)
 
-    def _load_states(self, idxs: np.ndarray) -> np.ndarray:
+    def _load_states(self, idxs: SIDXs) -> np.ndarray:
         return np.stack([self._load_state(idx) for idx in idxs])
+
+    def _remove_state(self, sidx: SIDX):
+        if sidx in self._state_store:
+            del self._state_store[sidx]
 
     def __getstate__(self):
         for idx in self._locks: self._wait(idx)

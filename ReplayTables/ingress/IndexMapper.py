@@ -4,8 +4,13 @@ from abc import abstractmethod
 from ReplayTables.interface import EID, IDX, EIDs, IDXs
 
 class IndexMapper:
-    def __init__(self):
-        ...
+    def __init__(self, max_size: int):
+        self._max_size = max_size
+        self._size = 0
+
+    @property
+    def size(self):
+        return self._size
 
     @abstractmethod
     def add_eid(self, eid: EID, /, **kwargs: Any) -> IDX: ...
@@ -19,10 +24,5 @@ class IndexMapper:
     @abstractmethod
     def eids2idxs(self, eids: EIDs) -> IDXs: ...
 
-    def eids2idxs_sequence(self, start: EIDs, lag: int) -> IDXs:
-        out: Any = np.empty((lag + 1, len(start)), dtype=np.int32)
-        for i in range(lag + 1):
-            n_eids: Any = start + i
-            out[i] = self.eids2idxs(n_eids)
-
-        return out
+    @abstractmethod
+    def has_eids(self, eids: EIDs) -> np.ndarray: ...

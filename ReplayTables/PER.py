@@ -1,7 +1,7 @@
 import numpy as np
 from dataclasses import dataclass
 from typing import Optional
-from ReplayTables.interface import EID, LaggedTimestep, Batch
+from ReplayTables.interface import EID, LaggedTimestep, Batch, Item
 from ReplayTables.ReplayBuffer import ReplayBuffer
 from ReplayTables.sampling.PrioritySampler import PrioritySampler
 
@@ -18,14 +18,15 @@ class PrioritizedReplay(ReplayBuffer):
 
         self._c = config or PERConfig()
         self._sampler: PrioritySampler = PrioritySampler(
-            self._c.uniform_probability,
-            max_size,
-            self._rng,
+            rng=self._rng,
+            storage=self._storage,
+            mapper=self._idx_mapper,
+            uniform_probability=self._c.uniform_probability,
         )
 
         self._max_priority = 1e-16
 
-    def _on_add(self, transition: LaggedTimestep):
+    def _on_add(self, item: Item, transition: LaggedTimestep):
         if transition.extra is not None and 'priority' in transition.extra:
             priority = transition.extra['priority']
         elif self._c.new_priority_mode == 'max':
@@ -38,8 +39,7 @@ class PrioritizedReplay(ReplayBuffer):
         else:
             raise NotImplementedError()
 
-        idx = self._idx_mapper.eid2idx(transition.eid)
-        self._sampler.replace(idx, transition, priority=priority)
+        self._sampler.replace(item.idx, transition, priority=priority)
 
     def update_priorities(self, batch: Batch, priorities: np.ndarray):
         idxs = self._idx_mapper.eids2idxs(batch.eid)

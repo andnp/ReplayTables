@@ -1,5 +1,5 @@
 import numpy as np
-from typing import cast
+from typing import cast, Any
 from ReplayTables.storage.BasicStorage import BasicStorage
 from ReplayTables.interface import LaggedTimestep, EID, XID
 
@@ -22,7 +22,8 @@ def test_inferred_types1():
         n_x=None,
     )
 
-    storage.add(d)
+    idx: Any = 0
+    storage.add(idx, d)
 
     assert storage._state_store.dtype == np.uint8
     assert storage._state_store.shape == (11, 32, 32)
@@ -47,7 +48,8 @@ def test_inferred_types2():
         n_x=None,
     )
 
-    storage.add(d)
+    idx: Any = 0
+    storage.add(idx, d)
 
     assert storage._state_store.dtype == np.float32
     assert storage._state_store.shape == (11, 15)

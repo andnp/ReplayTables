@@ -2,7 +2,7 @@ import numpy as np
 
 from collections import defaultdict
 from typing import Any, Dict, Set
-from ReplayTables.interface import EID, XID
+from ReplayTables.interface import EID, XID, SIDX
 
 class RefCount:
     def __init__(self) -> None:
@@ -17,17 +17,17 @@ class RefCount:
             max_i: -1
         }
 
-    def add_state(self, eid: EID, xid: XID):
+    def add_state(self, eid: EID, xid: XID) -> SIDX:
         self._eid2xids[eid].add(xid)
         self._refs[xid].add(eid)
-        idx = self._idxs.get(xid)
+        idx: Any = self._idxs.get(xid)
 
         if idx is None:
             idx = self._next_free_idx()
             self._idxs[xid] = idx
-            return idx, False
+            return idx
 
-        return idx, True
+        return idx
 
     def load_state(self, xid: XID):
         idx = self._idxs[xid]

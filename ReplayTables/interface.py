@@ -6,6 +6,9 @@ IDXs = NewType('IDXs', np.ndarray)
 EID = NewType('EID', int)
 EIDs = NewType('EIDs', np.ndarray)
 XID = NewType('XID', int)
+XIDs = NewType('XIDs', np.ndarray)
+SIDX = NewType('SIDX', int)
+SIDXs = NewType('SIDXs', np.ndarray)
 
 class Addable(Protocol):
     def __add__(self, other: Any, /) -> Any:
@@ -54,3 +57,19 @@ class Batch(NamedTuple):
     xp: np.ndarray
 
 T = TypeVar('T', bound=Timestep)
+
+class Item(NamedTuple):
+    eid: EID
+    idx: IDX
+    xid: XID
+    n_xid: XID | None
+    sidx: SIDX
+    n_sidx: SIDX | None
+
+class Items(NamedTuple):
+    eids: EIDs
+    idxs: IDXs
+    xids: XIDs
+    n_xids: XIDs
+    sidxs: SIDXs
+    n_sidxs: SIDXs

@@ -1,13 +1,14 @@
+import numpy as np
 from abc import abstractmethod
 from typing import Any
-from ReplayTables.interface import Batch, LaggedTimestep, EID, EIDs, IDXs
-from ReplayTables.ingress.IndexMapper import IndexMapper
-from ReplayTables.ingress.CircularMapper import CircularMapper
+from ReplayTables.interface import Batch, LaggedTimestep, IDX, IDXs, Item
+from ReplayTables.storage.MetadataStorage import MetadataStorage
 
 class Storage:
-    def __init__(self, max_size: int, idx_mapper: IndexMapper | None = None):
-        self._idx_mapper = idx_mapper or CircularMapper(max_size)
+    def __init__(self, max_size: int):
         self._max_size = max_size
+        self._max_i = np.iinfo(np.int64).max
+        self.meta = MetadataStorage(max_size, self._max_i)
 
     @property
     def max_size(self):
@@ -18,29 +19,21 @@ class Storage:
         ...
 
     @abstractmethod
-    def __delitem__(self, eid: EID):
+    def get(self, idxs: IDXs) -> Batch:
         ...
 
     @abstractmethod
-    def __contains__(self, eid: EID):
+    def get_item(self, idx: IDX) -> LaggedTimestep:
         ...
 
     @abstractmethod
-    def get(self, eids: EIDs) -> Batch:
+    def set(self, idx: IDX, transition: LaggedTimestep) -> Item:
         ...
 
     @abstractmethod
-    def get_item(self, eid: EID) -> LaggedTimestep:
+    def add(self, idx: IDX, transition: LaggedTimestep, /, **kwargs: Any) -> Item:
         ...
 
     @abstractmethod
-    def set(self, transition: LaggedTimestep):
-        ...
-
-    @abstractmethod
-    def add(self, transition: LaggedTimestep, /, **kwargs: Any) -> None:
-        ...
-
-    @abstractmethod
-    def get_eids(self, idxs: IDXs) -> EIDs:
+    def delete(self, idx: IDX):
         ...

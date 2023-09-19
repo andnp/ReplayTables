@@ -6,20 +6,24 @@ from numba.typed import List as NList
 
 from ReplayTables.Distributions import PrioritizedDistribution, SubDistribution, MixtureDistribution
 from ReplayTables.sampling.PrioritySampler import PrioritySampler
-from ReplayTables.interface import IDX, Batch, IDXs, LaggedTimestep
+from ReplayTables.storage.Storage import Storage
+from ReplayTables.ingress.IndexMapper import IndexMapper
+from ReplayTables.interface import IDX, Batch, IDXs, EIDs, LaggedTimestep
 from ReplayTables._utils.jit import try2jit
+from ReplayTables.sampling.tools import back_sequence
 
 class PrioritySequenceSampler(PrioritySampler):
     def __init__(
         self,
+        rng: np.random.Generator,
+        storage: Storage,
+        mapper: IndexMapper,
         uniform_probability: float,
         trace_decay: float,
         trace_depth: int,
         combinator: str,
-        max_size: int,
-        rng: np.random.Generator,
     ) -> None:
-        super().__init__(uniform_probability, max_size, rng)
+        super().__init__(rng, storage, mapper, uniform_probability)
 
         self._terminal = set[int]()
         # numba needs help with type inference
@@ -31,15 +35,14 @@ class PrioritySequenceSampler(PrioritySampler):
             trace_depth=trace_depth,
             combinator=combinator,
         )
-        self._ps_dist = PrioritizedSequenceDistribution(seq_config)
+        self._ps_dist = PrioritizedSequenceDistribution(seq_config, self._storage, self._mapper)
 
-        self._dist = MixtureDistribution(max_size, dists=[
+        self._dist = MixtureDistribution(self._max_size, dists=[
             SubDistribution(d=self._ps_dist, p=1 - uniform_probability),
             SubDistribution(d=self._uniform, p=uniform_probability)
         ])
 
     def replace(self, idx: IDX, transition: LaggedTimestep, /, **kwargs: Any) -> None:
-        self._size = max(idx + 1, self._size)
         self._terminal.discard(idx)
         if transition.terminal:
             self._terminal.add(idx)
@@ -50,7 +53,7 @@ class PrioritySequenceSampler(PrioritySampler):
         priorities = kwargs['priorities']
         self._uniform.update(idxs)
 
-        self._ps_dist.update_seq(idxs, priorities, terminal=self._terminal)
+        self._ps_dist.update_seq(batch.eid, idxs, priorities, terminal=self._terminal)
 
 
 @dataclass
@@ -60,60 +63,75 @@ class PSDistributionConfig:
     combinator: str
 
 class PrioritizedSequenceDistribution(PrioritizedDistribution):
-    def __init__(self, config: PSDistributionConfig, size: int | None = None):
-        super().__init__(config, size)
+    def __init__(self, config: PSDistributionConfig, storage: Storage, mapper: IndexMapper):
+        super().__init__(config, None)
 
         self._c: PSDistributionConfig = config
         assert self._c.combinator in ['max', 'sum']
 
-        # track how many things have been added to dist
-        self._actual_size = 0
+        self._storage = storage
+        self._mapper = mapper
 
         # pre-compute and cache this
         self._trace = np.cumprod(np.ones(self._c.trace_depth) * self._c.trace_decay)
 
-    def update_seq(self, idxs: IDXs, priorities: np.ndarray, terminal: Set[int]):
-        self._actual_size = max(self._actual_size, idxs.max() + 1)
+    def update_seq(self, eids: EIDs, idxs: IDXs, priorities: np.ndarray, terminal: Set[int]):
+        b_eids: Any = back_sequence(eids, self._c.trace_depth)
 
-        u_idx, u_priorities = _update(
+        b_idxs = self._mapper.eids2idxs(b_eids)
+        idx_mask = _term_sequence(b_idxs, terminal) | (~self._mapper.has_eids(b_eids))
+
+        u_idx, u_priorities = _get_priorities(
             self.tree.raw,
             self.dim,
-            self._actual_size,
-            idxs,
-            priorities,
-            self._c.combinator,
+            b_idxs,
+            idx_mask,
             self._trace,
-            terminal,
+            priorities,
+            comb=self._c.combinator,
         )
+
+        u_idx = np.concatenate((idxs, u_idx), axis=0, dtype=np.int64)
+        u_priorities = np.concatenate((priorities, u_priorities), axis=0)
 
         self.tree.update(self.dim, u_idx, u_priorities)
 
 
 @try2jit()
-def _update(tree: NList[np.ndarray], d: int, size: int, idxs: np.ndarray, priorities: np.ndarray, comb: str, trace: np.ndarray, terms: Set[int]):
-    depth = len(trace)
+def _term_sequence(idxs: np.ndarray, term: Set[int]):
+    assert len(idxs.shape) == 2
+
+    out = np.empty(idxs.shape, dtype=np.bool_)
+    for i in range(idxs.shape[0]):
+        has_term = False
+        for j in range(idxs.shape[1]):
+            has_term = has_term or (idxs[i, j] in term)
+            out[i, j] = has_term
+
+    return out
+
+@try2jit()
+def _get_priorities(tree: NList[np.ndarray], d: int, idxs: np.ndarray, masks: np.ndarray, traces: np.ndarray, priorities: np.ndarray, comb: str):
+    depth = len(traces)
     out_idxs = np.empty(depth * len(idxs), dtype=np.int64)
-    out = np.empty(depth * len(idxs))
+    out = np.empty(depth * len(idxs), dtype=np.float64)
 
     def c(a: float, b: float):
         if comb == 'sum':
             return a + b
         return max(a, b)
 
-    j = 0
-    for idx, v in zip(idxs, priorities):
-        for i in range(depth):
-            s_idx = (idx - (i + 1)) % size
-            if s_idx in terms: break
+    k = 0
+    for i in range(idxs.shape[0]):
+        for j in range(depth):
+            if masks[i, j]: continue
 
-            prior = tree[0][d, s_idx]
-            new = c(prior, trace[i] * v)
+            idx = idxs[i, j]
+            prior = tree[0][d, idx]
+            new = c(prior, traces[j] * priorities[i])
 
-            out_idxs[j] = s_idx
-            out[j] = new
-            j += 1
+            out_idxs[k] = idx
+            out[k] = new
+            k += 1
 
-    return (
-        np.concatenate((idxs, out_idxs[:j])).astype(np.int64),
-        np.concatenate((priorities, out[:j])),
-    )
+    return out_idxs[:k], out[:k]
