@@ -25,6 +25,7 @@ class CompressedStorage(BasicStorage):
         self._a = np.empty(self._max_size, dtype=npu.get_dtype(transition.a))
 
         self._state_store[-1] = lz4.frame.compress(zero_x)
+        self._shape = zero_x.shape
 
     def _wait(self, idx: int):
         if idx in self._locks:
@@ -41,7 +42,7 @@ class CompressedStorage(BasicStorage):
     def _load_state(self, idx: SIDX) -> np.ndarray:
         self._wait(idx)
         raw = lz4.frame.decompress(self._state_store[idx])
-        return np.frombuffer(raw, dtype=self._dtype)
+        return np.frombuffer(raw, dtype=self._dtype).reshape(self._shape)
 
     def _load_states(self, idxs: SIDXs) -> np.ndarray:
         return np.stack([self._load_state(idx) for idx in idxs])
