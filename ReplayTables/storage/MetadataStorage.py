@@ -45,7 +45,7 @@ class MetadataStorage:
     def add_item(self, eid: EID, idx: IDX, xid: XID, n_xid: XID | None) -> Tuple[Item, Item | None, Set[XID]]:
         # first check if there was already an item
         last_item = None
-        xids_to_remove = None
+        xids_to_remove = set()
         if self._ids[idx, _EID_C] < self._max_i:
             last_item = self.get_item_by_idx(idx)
             xids_to_remove = self._ref.remove_transition(last_item.eid)
