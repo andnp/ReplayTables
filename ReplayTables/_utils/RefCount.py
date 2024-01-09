@@ -38,6 +38,9 @@ class RefCount:
         return idxs
 
     def remove_transition(self, eid: EID):
+
+        xids_to_remove = []
+
         if eid not in self._eid2xids:
             return
 
@@ -53,6 +56,9 @@ class RefCount:
                 self._avail_idxs.add(idx)
                 del self._refs[xid]
                 del self._idxs[xid]
+                xids_to_remove.append(xid)
+
+        return set(xids_to_remove)
 
     def _next_free_idx(self) -> int:
         if len(self._avail_idxs) == 0:

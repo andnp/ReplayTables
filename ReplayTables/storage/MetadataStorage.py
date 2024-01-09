@@ -1,5 +1,5 @@
 import numpy as np
-from typing import Any, Tuple
+from typing import Any, Tuple, Set
 from ReplayTables.interface import Item, Items, EID, IDX, IDXs, XID
 from ReplayTables._utils.RefCount import RefCount
 
@@ -42,12 +42,13 @@ class MetadataStorage:
             n_sidxs=meta[:, _NSIDX_C],
         )
 
-    def add_item(self, eid: EID, idx: IDX, xid: XID, n_xid: XID | None) -> Tuple[Item, Item | None]:
+    def add_item(self, eid: EID, idx: IDX, xid: XID, n_xid: XID | None) -> Tuple[Item, Item | None, Set[XID]]:
         # first check if there was already an item
         last_item = None
+        xids_to_remove = None
         if self._ids[idx, _EID_C] < self._max_i:
             last_item = self.get_item_by_idx(idx)
-            self._ref.remove_transition(last_item.eid)
+            xids_to_remove = self._ref.remove_transition(last_item.eid)
 
         # register states with reference counter
         sidx = self._ref.add_state(eid, xid)
@@ -76,4 +77,4 @@ class MetadataStorage:
             n_sidx=n_sidx if n_xid is not None else None,
         )
 
-        return item, last_item
+        return item, last_item, xids_to_remove

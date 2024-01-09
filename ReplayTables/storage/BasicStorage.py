@@ -1,8 +1,8 @@
 import numpy as np
 import ReplayTables._utils.np as npu
 
-from typing import Any, Dict
-from ReplayTables.interface import Batch, LaggedTimestep, IDX, IDXs, SIDX, SIDXs, Item
+from typing import Any, Dict, Set
+from ReplayTables.interface import Batch, LaggedTimestep, IDX, IDXs, SIDX, SIDXs, XID, Item
 from ReplayTables.storage.Storage import Storage
 
 
@@ -34,11 +34,11 @@ class BasicStorage(Storage):
         if not self._built: self._deferred_init(transition)
 
         # stash metadata
-        item, last_item = self.meta.add_item(eid=transition.eid, idx=idx, xid=transition.xid, n_xid=transition.n_xid)
+        item, last_item, xids_to_remove = self.meta.add_item(eid=transition.eid, idx=idx, xid=transition.xid, n_xid=transition.n_xid)
 
         # make room in state storage
         if last_item is not None:
-            self.delete_item(last_item)
+            self.delete_item(last_item, xids_to_remove)
 
         # store easy things
         self._r[idx] = transition.r
@@ -116,13 +116,14 @@ class BasicStorage(Storage):
         item = self.meta.get_item_by_idx(idx)
         self.delete_item(item)
 
-    def delete_item(self, item: Item):
-        self._remove_state(item.sidx)
+    def delete_item(self, item: Item, xids_to_remove: Set[XID]):
+        if item.xid in xids_to_remove:
+            self._remove_state(item.sidx)
 
         if item.idx in self._extras:
             del self._extras[item.idx]
 
-        if item.n_sidx is not None:
+        if item.n_sidx is not None and item.n_xid in xids_to_remove:
             self._remove_state(item.n_sidx)
 
     def __len__(self):
