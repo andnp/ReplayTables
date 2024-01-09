@@ -52,8 +52,12 @@ class CompressedStorage(BasicStorage):
             del self._state_store[sidx]
 
     def __getstate__(self):
-        for idx in self._locks: self._wait(idx)
-        return { '_state_store': self._state_store }
+        for idx in list(self._locks): self._wait(idx)
+        d = self.__dict__.copy()
+        del d['_tpe']
+        return d
 
     def __setstate__(self, state):
-        self._state_store = state['_state_store']
+        self.__dict__ = state
+        self._tpe = ThreadPoolExecutor(max_workers=2)
+        self._locks = {}
