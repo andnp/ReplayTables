@@ -1,6 +1,7 @@
 import numpy as np
 from abc import abstractmethod
 from typing import Any
+from ReplayTables._utils.logger import logger
 from ReplayTables.interface import Timestep, LaggedTimestep, Batch, EID, EIDs, Item
 from ReplayTables.ingress.IndexMapper import IndexMapper
 from ReplayTables.ingress.CircularMapper import CircularMapper
@@ -47,6 +48,28 @@ class ReplayBufferInterface:
         idxs = self._sampler.sample(n)
         samples = self._storage.get(idxs)
         return samples
+
+    def sample_without_replacement(self, n: int) -> Batch:
+        # most of the time, we get unique idxs in the first sample
+        # so we fastpath past the type conversions and set additions
+        # for that common case for performance reasons.
+        sub_idxs = self._sampler.sample(n)
+        uniq_idxs = set(sub_idxs)
+
+        if len(uniq_idxs) < n:
+            for _ in range(25):
+                sub_idxs = self._sampler.sample(n)
+                uniq_idxs |= set(sub_idxs)
+
+        idx_list = list(uniq_idxs)
+        if len(idx_list) < n:
+            logger.warn(f'Failed to get <{n}> required unique samples. Got <{len(idx_list)}>')
+
+        if len(idx_list) > n:
+            idx_list = idx_list[:n]
+
+        idxs: Any = np.asarray(idx_list, dtype=np.int64)
+        return self._storage.get(idxs)
 
     def isr_weights(self, eids: EIDs) -> np.ndarray:
         idxs = self._idx_mapper.eids2idxs(eids)
