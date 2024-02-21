@@ -77,3 +77,6 @@ class MetadataStorage:
         )
 
         return item, last_item
+
+    def has_xid(self, xid: XID):
+        return self._ref.has_xid(xid)

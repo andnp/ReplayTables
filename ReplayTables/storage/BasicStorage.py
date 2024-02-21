@@ -34,7 +34,12 @@ class BasicStorage(Storage):
         if not self._built: self._deferred_init(transition)
 
         # stash metadata
-        item, last_item = self.meta.add_item(eid=transition.eid, idx=idx, xid=transition.xid, n_xid=transition.n_xid)
+        item, last_item = self.meta.add_item(
+            eid=transition.eid,
+            idx=idx,
+            xid=transition.xid,
+            n_xid=transition.n_xid,
+        )
 
         # make room in state storage
         if last_item is not None:
@@ -117,12 +122,14 @@ class BasicStorage(Storage):
         self.delete_item(item)
 
     def delete_item(self, item: Item):
-        self._remove_state(item.sidx)
+        if not self.meta.has_xid(item.xid):
+            self._remove_state(item.sidx)
 
         if item.idx in self._extras:
             del self._extras[item.idx]
 
-        if item.n_sidx is not None:
+        if item.n_xid is not None and not self.meta.has_xid(item.n_xid):
+            assert item.n_sidx is not None
             self._remove_state(item.n_sidx)
 
     def __len__(self):

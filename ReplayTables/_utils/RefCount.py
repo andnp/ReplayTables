@@ -37,6 +37,9 @@ class RefCount:
         idxs = np.array([self._idxs[xid] for xid in xids], dtype=np.int64)
         return idxs
 
+    def has_xid(self, xid: XID):
+        return xid in self._idxs
+
     def remove_transition(self, eid: EID):
         if eid not in self._eid2xids:
             return
