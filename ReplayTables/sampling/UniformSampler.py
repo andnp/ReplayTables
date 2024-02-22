@@ -1,4 +1,5 @@
 import numpy as np
+import ReplayTables._utils.np as npu
 from typing import Any
 from ReplayTables.sampling.IndexSampler import IndexSampler
 from ReplayTables.interface import IDX, IDXs, LaggedTimestep, Batch
@@ -22,4 +23,8 @@ class UniformSampler(IndexSampler):
 
     def sample(self, n: int) -> IDXs:
         idxs: Any = self._rng.integers(0, self._mapper.size, size=n)
+        return idxs
+
+    def stratified_sample(self, n: int) -> IDXs:
+        idxs: Any = npu.stratified_sample_integers(self._rng, n, self._mapper.size)
         return idxs

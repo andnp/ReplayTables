@@ -60,3 +60,6 @@ class BackwardsSampler(IndexSampler):
         self._prior_eids = new_eids
 
         return self._mapper.eids2idxs(new_eids)
+
+    def stratified_sample(self, n: int) -> IDXs:
+        raise NotImplementedError()

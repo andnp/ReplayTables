@@ -42,6 +42,20 @@ def query(tree: NList[np.ndarray], size: int, weights: np.ndarray, values: np.nd
 
     return _bound(idxs, size - 1)
 
+@try2jit()
+def stratified_sample(
+    rng: np.random.Generator,
+    batch_size: int,
+    tree: NList[np.ndarray],
+    size: int,
+    weights: np.ndarray,
+) -> np.ndarray:
+    buckets = np.linspace(0., 1., batch_size + 1)
+    values = np.asarray([
+        rng.uniform(buckets[i], buckets[i + 1]) for i in range(batch_size)
+    ])
+    return query(tree, size, weights, values)
+
 
 class SumTree:
     def __init__(self, size: int, dims: int = 1, _defer_build: bool = False):
@@ -113,6 +127,13 @@ class SumTree:
 
         rs = rng.uniform(0, t, size=n)
         return query(self._tree, self._size, w_, rs)
+
+    def stratified_sample(self, rng: np.random.Generator, n: int, w: W = None) -> np.ndarray:
+        w_ = self._get_w(w)
+        t = self.total(w_)
+        assert t > 0, "Cannot sample when the tree is empty or contains negative values"
+
+        return stratified_sample(rng, n, self._tree, self._size, w_)
 
     def _get_w(self, w: W = None):
         if w is None:

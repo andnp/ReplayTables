@@ -1,6 +1,7 @@
 from __future__ import annotations
 import numpy as np
 import numpy.typing as npt
+import ReplayTables._utils.np as npu
 from typing import Any, Optional, NamedTuple, Sequence
 from ReplayTables._utils.SumTree import SumTree
 
@@ -10,6 +11,9 @@ class Distribution:
 
     def sample(self, rng: np.random.Generator, n: int):
         raise NotImplementedError('Expected sample to be implemented')
+
+    def stratified_sample(self, rng: np.random.Generator, n: int):
+        raise NotImplementedError('Expected stratified_sample to be implemented')
 
     def isr(self, target: Distribution, idxs: np.ndarray):
         return target.probs(idxs) / self.probs(idxs)
@@ -29,6 +33,9 @@ class UniformDistribution(Distribution):
             return np.zeros(n, dtype=np.int64)
 
         return rng.integers(0, self._size, size=n)
+
+    def stratified_sample(self, rng: np.random.Generator, n: int):
+        return npu.stratified_sample_integers(rng, n, self._size)
 
     def probs(self, idxs: npt.ArrayLike):
         return np.full_like(idxs, fill_value=(1 / self._size), dtype=np.float_)
@@ -83,6 +90,9 @@ class PrioritizedDistribution(Distribution):
 
     def sample(self, rng: np.random.Generator, n: int):
         return self.tree.sample(rng, n, self.weights)
+
+    def stratified_sample(self, rng: np.random.Generator, n: int):
+        return self.tree.stratified_sample(rng, n, self.weights)
 
     def update(self, idxs: np.ndarray, values: np.ndarray):
         self.tree.update(self.dim, idxs, values)
@@ -164,6 +174,11 @@ class MixtureDistribution(Distribution):
         w = self._filter_defunct()
         w = w * self._tree.effective_weights()
         return self._tree.sample(rng, n, w)
+
+    def stratified_sample(self, rng: np.random.Generator, n: int):
+        w = self._filter_defunct()
+        w = w * self._tree.effective_weights()
+        return self._tree.stratified_sample(rng, n, w)
 
     def isr(self, target: Distribution, idxs: np.ndarray):
         tops = target.probs(idxs)

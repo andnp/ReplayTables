@@ -70,6 +70,10 @@ class PrioritySequenceSampler(IndexSampler):
         idxs: Any = self._dist.sample(self._rng, n)
         return idxs
 
+    def stratified_sample(self, n: int) -> IDXs:
+        idxs: Any = self._dist.stratified_sample(self._rng, n)
+        return idxs
+
     def mask_sample(self, idx: IDX):
         idxs = np.array([idx], dtype=np.int64)
         zero = np.zeros(1)

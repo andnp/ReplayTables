@@ -39,3 +39,7 @@ class IndexSampler:
     @abstractmethod
     def sample(self, n: int) -> IDXs:
         ...
+
+    @abstractmethod
+    def stratified_sample(self, n: int) -> IDXs:
+        ...

@@ -52,6 +52,33 @@ class TestPER:
         unique.sort()
         assert np.all(unique == np.array([2, 3, 4, 5, 6]))
 
+    def test_stratified_sample(self):
+        rng = np.random.default_rng(0)
+        config = PERConfig(
+            new_priority_mode='given',
+            priority_exponent=1.0,
+        )
+        buffer = PrioritizedReplay(5, 1, rng, config)
+
+        # on creation, the buffer should have no size
+        assert buffer.size() == 0
+
+        # should be able to simply add and sample a single data point
+        d = fake_timestep(a=-1, r=None, extra={'priority': 1})
+        buffer.add_step(d)
+        assert buffer.size() == 0
+
+        for a in range(5):
+            d = fake_timestep(a=a, extra={'priority': 1})
+            buffer.add_step(d)
+
+        assert buffer.size() == 5
+
+        # slightly loose test criteria due to numerical stability issues
+        for _ in range(25):
+            batch = buffer.stratified_sample(3)
+            assert len(set(batch.a)) >= 2
+
     def test_priority_on_add(self):
         rng = np.random.default_rng(0)
         config = PERConfig(

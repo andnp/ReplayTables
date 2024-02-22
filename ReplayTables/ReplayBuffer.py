@@ -49,6 +49,11 @@ class ReplayBufferInterface:
         samples = self._storage.get(idxs)
         return samples
 
+    def stratified_sample(self, n: int) -> Batch:
+        idxs = self._sampler.stratified_sample(n)
+        samples = self._storage.get(idxs)
+        return samples
+
     def sample_without_replacement(self, n: int) -> Batch:
         # most of the time, we get unique idxs in the first sample
         # so we fastpath past the type conversions and set additions
