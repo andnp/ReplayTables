@@ -13,6 +13,3 @@ git checkout -f main
 
 # bump the version
 cz bump --no-verify --yes --check-consistency
-
-# push to pypi repository
-pdm build

@@ -21,10 +21,14 @@ dev = [
     "twine",
     "pytest~=7.3",
     "pytest-benchmark~=4.0",
+    "maturin>=1.4.0",
 ]
 
 [tool.mypy]
 mypy_path = "typings"
+
+[tool.maturin]
+features = ["pyo3/extension-module"]
 
 [project]
 name = "ReplayTables-andnp"
@@ -43,6 +47,12 @@ requires-python = ">=3.10,<3.12"
 readme = "README.md"
 license = {text = "MIT"}
 
+classifiers = [
+    "Programming Language :: Rust",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Programming Language :: Python :: Implementation :: PyPy",
+]
+
 [build-system]
-requires = ["pdm-pep517>=1.0.0"]
-build-backend = "pdm.pep517.api"
+requires = ["maturin>=1.4,<2.0"]
+build-backend = "maturin"

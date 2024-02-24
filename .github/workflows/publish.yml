@@ -1,41 +1,80 @@
 name: Publish
 
 on:
-  workflow_run:
-    workflows: ['Test']
-    branches: [main]
-    types:
-      - completed
+  push:
+    tags:
+      - '*'
 
 jobs:
   build:
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
-
-    runs-on: ubuntu-latest
-
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        target: [x86_64, x86]
+        python-version: ["3.10", "3.11", "3.12"]
+        os: [windows-latest, ubuntu-latest, macos-latest]
     steps:
-    - uses: actions/checkout@v3
-    - run: git fetch --prune --unshallow
-    - name: Set up PDM
-      uses: pdm-project/setup-pdm@v3
-      with:
-        python-version: '3.10'
+      - uses: actions/checkout@v4
+      - name: Set up PDM
+        uses: pdm-project/setup-pdm@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: true
+      - name: Install dependencies
+        run: |
+          pdm config venv.with_pip True
+          pdm install
+      - name: Build wheels
+        uses: PyO3/maturin-action@v1
+        with:
+          target: ${{ matrix.target }}
+          args: --release --out dist --find-interpreter
+          sccache: 'true'
+          manylinux: auto
+      - name: Upload wheels
+        uses: actions/upload-artifact@v3
+        with:
+          name: wheels
+          path: dist
 
-    - name: Install dependencies
-      run: |
-        pdm install
+  sdist:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build sdist
+        uses: PyO3/maturin-action@v1
+        with:
+          command: sdist
+          args: --out dist
+      - name: Upload sdist
+        uses: actions/upload-artifact@v3
+        with:
+          name: wheels
+          path: dist
 
-    - name: Build
-      env:
-        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: pdm run ./scripts/publish.sh
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    needs: [build, sdist]
+    steps:
+      - uses: actions/download-artifact@v3
+        with:
+          name: wheels
+      - name: Publish to PyPI
+        uses: PyO3/maturin-action@v1
+        env:
+          MATURIN_PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
+        with:
+          command: upload
+          args: --non-interactive --skip-existing *
 
-    - name: Publish
-      uses: pypa/gh-action-pypi-publish@release/v1
-      with:
-          password: ${{ secrets.PYPI_TOKEN }}
-
-    - name: Tag
-      run: |
-        git push
-        git push --tags
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: ${{ github.ref }}
+          draft: false
+          prerelease: false

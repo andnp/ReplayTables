@@ -8,14 +8,16 @@ jobs:
     name: Run pytest-benchmark
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Set up PDM
-        uses: pdm-project/setup-pdm@v3
+        uses: pdm-project/setup-pdm@v4
         with:
           python-version: "3.11"
       - name: Run benchmark
         run: |
+          pdm config venv.with_pip True
           pdm install
+          pdm run maturin develop --release
           pdm run pytest --benchmark-json output.json
 
       - name: Store benchmark result

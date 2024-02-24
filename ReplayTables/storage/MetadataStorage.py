@@ -1,7 +1,7 @@
 import numpy as np
 from typing import Any, Tuple
 from ReplayTables.interface import Item, Items, EID, IDX, IDXs, XID
-from ReplayTables._utils.RefCount import RefCount
+from replay_tables_rs import RefCount
 
 _EID_C = 0
 _XID_C = 1
@@ -50,7 +50,7 @@ class MetadataStorage:
             self._ref.remove_transition(last_item.eid)
 
         # register states with reference counter
-        sidx = self._ref.add_state(eid, xid)
+        sidx: Any = self._ref.add_state(eid, xid)
         n_sidx: Any = -1
         if n_xid is not None:
             n_sidx = self._ref.add_state(eid, n_xid)

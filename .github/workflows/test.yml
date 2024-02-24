@@ -19,10 +19,15 @@ jobs:
       uses: pdm-project/setup-pdm@v4
       with:
         python-version: ${{ matrix.python-version }}
+        cache: true
 
     - name: Install dependencies
       run: |
+        pdm config venv.with_pip True
         pdm install
+
+    - name: Build rust
+      run: pdm run maturin develop --release
 
     - name: Test
       env:
