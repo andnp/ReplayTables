@@ -18,7 +18,7 @@ pub struct RefCount {
 #[pymethods]
 impl RefCount {
     #[new]
-    fn new() -> Self {
+    pub fn new() -> Self {
         let mut idxs = HashMap::new();
         idxs.insert(i64::MAX, -1);
 

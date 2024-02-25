@@ -8,6 +8,7 @@ version = "0.1.0"
 dependencies = [
  "bincode",
  "hashbrown",
+ "ndarray",
  "numpy",
  "pyo3",
  "serde",
@@ -127,6 +128,7 @@ dependencies = [
  "num-integer",
  "num-traits",
  "rawpointer",
+ "serde",
 ]
 
 [[package]]
