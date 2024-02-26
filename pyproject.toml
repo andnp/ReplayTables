@@ -47,7 +47,7 @@ dev = [
     "pre-commit",
     "matplotlib",
     "twine",
-    "pytest~=7.3",
+    "pytest>=7.3,<9.0",
     "pytest-benchmark~=4.0",
     "maturin~=1.4.0",
 ]
