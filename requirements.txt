@@ -2,98 +2,48 @@
 #    uv pip compile --extra=dev pyproject.toml -o requirements.txt
 argcomplete==3.2.2
     # via commitizen
-certifi==2024.2.2
-    # via requests
-cffi==1.16.0
-    # via cryptography
 cfgv==3.4.0
     # via pre-commit
 charset-normalizer==3.3.2
-    # via
-    #   commitizen
-    #   requests
+    # via commitizen
 colorama==0.4.6
     # via commitizen
 commitizen==3.15.0
-contourpy==1.2.0
-    # via matplotlib
-cryptography==42.0.5
-    # via secretstorage
-cycler==0.12.1
-    # via matplotlib
 decli==0.6.1
     # via commitizen
 distlib==0.3.8
     # via virtualenv
-docutils==0.20.1
-    # via readme-renderer
 filelock==3.13.1
     # via virtualenv
-flake8==7.0.0
-fonttools==4.49.0
-    # via matplotlib
 identify==2.5.35
     # via pre-commit
-idna==3.6
-    # via requests
 importlib-metadata==7.0.1
-    # via
-    #   commitizen
-    #   keyring
-    #   twine
+    # via commitizen
 iniconfig==2.0.0
     # via pytest
-jaraco-classes==3.3.1
-    # via keyring
-jeepney==0.8.0
-    # via
-    #   keyring
-    #   secretstorage
 jinja2==3.1.3
     # via commitizen
-keyring==24.3.0
-    # via twine
-kiwisolver==1.4.5
-    # via matplotlib
 llvmlite==0.42.0
     # via numba
 lz4==4.3.3
-markdown-it-py==3.0.0
-    # via rich
 markupsafe==2.1.5
     # via jinja2
-matplotlib==3.8.3
 maturin==1.4.0
-mccabe==0.7.0
-    # via flake8
-mdurl==0.1.2
-    # via markdown-it-py
-more-itertools==10.2.0
-    # via jaraco-classes
 mypy==1.8.0
 mypy-extensions==1.0.0
     # via mypy
-nh3==0.2.15
-    # via readme-renderer
 nodeenv==1.8.0
     # via pre-commit
 numba==0.59.0
 numpy==1.26.4
     # via
-    #   contourpy
-    #   matplotlib
     #   numba
     #   scipy
 packaging==23.2
     # via
     #   commitizen
-    #   matplotlib
     #   pytest
-pillow==10.2.0
-    # via matplotlib
 pip==24.0
-pkginfo==1.9.6
-    # via twine
 platformdirs==4.2.0
     # via virtualenv
 pluggy==1.4.0
@@ -103,60 +53,25 @@ prompt-toolkit==3.0.36
     # via questionary
 py-cpuinfo==9.0.0
     # via pytest-benchmark
-pycodestyle==2.11.1
-    # via flake8
-pycparser==2.21
-    # via cffi
-pyflakes==3.2.0
-    # via flake8
-pygments==2.17.2
-    # via
-    #   readme-renderer
-    #   rich
-pyparsing==3.1.1
-    # via matplotlib
 pytest==8.0.2
     # via pytest-benchmark
 pytest-benchmark==4.0.0
-python-dateutil==2.8.2
-    # via matplotlib
 pyyaml==6.0.1
     # via
     #   commitizen
     #   pre-commit
 questionary==2.0.1
     # via commitizen
-readme-renderer==42.0
-    # via twine
-requests==2.31.0
-    # via
-    #   requests-toolbelt
-    #   twine
-requests-toolbelt==1.0.0
-    # via twine
-rfc3986==2.0.0
-    # via twine
-rich==13.7.0
-    # via twine
 ruff==0.2.2
 scipy==1.12.0
-secretstorage==3.3.3
-    # via keyring
 setuptools==69.1.1
     # via nodeenv
-six==1.16.0
-    # via python-dateutil
 termcolor==2.4.0
     # via commitizen
 tomlkit==0.12.3
     # via commitizen
-twine==5.0.0
 typing-extensions==4.10.0
     # via mypy
-urllib3==2.2.1
-    # via
-    #   requests
-    #   twine
 virtualenv==20.25.1
     # via pre-commit
 wcwidth==0.2.13
