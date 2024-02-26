@@ -94,13 +94,13 @@ def lags_to_batch(lagged: Sequence[LaggedTimestep]) -> Batch:
     zero = np.zeros_like(lagged[0].x)
     xps = []
 
-    for l in lagged:
-        if l.n_x is None:
+    for lag in lagged:
+        if lag.n_x is None:
             xps.append(zero)
         else:
-            xps.append(l.n_x)
+            xps.append(lag.n_x)
 
-    eids: Any = np.array([l.eid for l in lagged])
+    eids: Any = np.array([lag.eid for lag in lagged])
     return Batch(
         eid=eids,
         x=np.stack([d.x for d in lagged], axis=0),
