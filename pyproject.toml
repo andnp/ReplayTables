@@ -5,30 +5,14 @@ version = "6.2.1"
 tag_format = "$version"
 version_files = ["pyproject.toml"]
 
-[tool.pdm]
-[[tool.pdm.source]]
-url = "https://pypi.org/simple"
-verify_ssl = true
-name = "pypi"
-
-[tool.pdm.dev-dependencies]
-dev = [
-    "mypy",
-    "flake8",
-    "commitizen",
-    "pre-commit",
-    "matplotlib",
-    "twine",
-    "pytest~=7.3",
-    "pytest-benchmark~=4.0",
-    "maturin>=1.4.0",
-]
-
 [tool.mypy]
 mypy_path = "typings"
 
 [tool.maturin]
 features = ["pyo3/extension-module"]
+
+[tool.ruff.lint]
+ignore = ['E701']
 
 [project]
 name = "ReplayTables-andnp"
@@ -41,9 +25,9 @@ dependencies = [
     "numba~=0.57",
     "numpy~=1.23",
     "scipy~=1.9",
-    "lz4>=4.3.2",
+    "lz4~=4.3.2",
 ]
-requires-python = ">=3.10,<3.12"
+requires-python = ">=3.10,<3.13"
 readme = "README.md"
 license = {text = "MIT"}
 
@@ -51,6 +35,21 @@ classifiers = [
     "Programming Language :: Rust",
     "Programming Language :: Python :: Implementation :: CPython",
     "Programming Language :: Python :: Implementation :: PyPy",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pip",
+    "mypy",
+    "ruff",
+    "flake8",
+    "commitizen",
+    "pre-commit",
+    "matplotlib",
+    "twine",
+    "pytest~=7.3",
+    "pytest-benchmark~=4.0",
+    "maturin~=1.4.0",
 ]
 
 [build-system]
