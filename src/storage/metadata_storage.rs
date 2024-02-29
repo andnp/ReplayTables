@@ -116,8 +116,7 @@ impl MetadataStorage {
 
         for i in 0..size {
             let idx = *idxs.get(i).expect("");
-            let idx = idx as usize;
-            let item = self._ids.get(idx).expect("");
+            let item = self._ids.get(idx as usize).expect("");
             eids[i] = item.eid;
             xids[i] = item.xid;
             sidxs[i] = item.sidx;

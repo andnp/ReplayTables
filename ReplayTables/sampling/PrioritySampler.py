@@ -23,7 +23,7 @@ class PrioritySampler(IndexSampler):
         ])
 
     def replace(self, idx: IDX, transition: LaggedTimestep, /, **kwargs: Any) -> None:
-        idxs = np.array([idx])
+        idxs = np.array([idx], dtype=np.int64)
 
         priority: float = kwargs['priority']
         priorities = np.array([priority])

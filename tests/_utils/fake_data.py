@@ -28,7 +28,7 @@ def fake_batch(
     r: np.ndarray = _zero_b,
     xp: np.ndarray = _zero_b,
 ):
-    eids: Any = np.array([0], dtype=np.uint32)
+    eids: Any = np.array([0], dtype=np.int64)
     return Batch(
         x=x,
         a=a,

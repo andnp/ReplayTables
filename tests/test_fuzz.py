@@ -93,7 +93,7 @@ def test_1():
             bu.add(d)
 
         if step > 0:
-            idxs: Any = rng.integers(ss.size(), size=8)
+            idxs: Any = rng.integers(ss.size(), size=8, dtype=np.int64)
 
             g1 = ss.get(idxs)
             g2 = bu._storage.get(idxs)

@@ -14,9 +14,9 @@ class MinMaxHeap:
             # actual heap values
             np.zeros(4),
             # storage pointers
-            np.zeros(4, dtype=np.uint32),
+            np.zeros(4, dtype=np.int64),
             # back-references
-            np.zeros(4, dtype=np.uint32),
+            np.zeros(4, dtype=np.int64),
         )
 
     def add(self, priority: float, idx: int):

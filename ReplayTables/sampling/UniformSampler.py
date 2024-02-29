@@ -22,7 +22,7 @@ class UniformSampler(IndexSampler):
         return np.ones(len(idxs))
 
     def sample(self, n: int) -> IDXs:
-        idxs: Any = self._rng.integers(0, self._mapper.size, size=n)
+        idxs: Any = self._rng.integers(0, self._mapper.size, size=n, dtype=np.int64)
         return idxs
 
     def stratified_sample(self, n: int) -> IDXs:

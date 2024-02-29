@@ -2,9 +2,9 @@ import numpy as np
 
 from dataclasses import dataclass
 from typing import Any, Set
-from numba.typed import List as NList
 
 from ReplayTables.Distributions import PrioritizedDistribution, SubDistribution, MixtureDistribution, MixinUniformDistribution
+from ReplayTables._utils.SumTree import SumTree
 from ReplayTables.sampling.IndexSampler import IndexSampler
 from ReplayTables.storage.Storage import Storage
 from ReplayTables.ingress.IndexMapper import IndexMapper
@@ -110,7 +110,7 @@ class PrioritizedSequenceDistribution(PrioritizedDistribution):
         idx_mask = _term_sequence(b_idxs, terminal) | (~self._mapper.has_eids(b_eids))
 
         u_idx, u_priorities = _get_priorities(
-            self.tree.raw,
+            self.tree,
             self.dim,
             b_idxs,
             idx_mask,
@@ -138,8 +138,7 @@ def _term_sequence(idxs: np.ndarray, term: Set[int]):
 
     return out
 
-@try2jit()
-def _get_priorities(tree: NList[np.ndarray], d: int, idxs: np.ndarray, masks: np.ndarray, traces: np.ndarray, priorities: np.ndarray, comb: str):
+def _get_priorities(tree: SumTree, d: int, idxs: np.ndarray, masks: np.ndarray, traces: np.ndarray, priorities: np.ndarray, comb: str):
     depth = len(traces)
     out_idxs = np.empty(depth * len(idxs), dtype=np.int64)
     out = np.empty(depth * len(idxs), dtype=np.float64)
@@ -155,7 +154,7 @@ def _get_priorities(tree: NList[np.ndarray], d: int, idxs: np.ndarray, masks: np
             if masks[i, j]: continue
 
             idx = idxs[i, j]
-            prior = tree[0][d, idx]
+            prior = tree.get_value(d, idx)
             new = c(prior, traces[j] * priorities[i])
 
             out_idxs[k] = idx

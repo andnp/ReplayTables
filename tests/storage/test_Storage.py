@@ -202,7 +202,7 @@ def test_small_data(benchmark, Store: Type[Storage]):
             storage.get(eids % 10_000)
 
     storage = Store(10_000)
-    eids = np.arange(32)
+    eids = np.arange(32, dtype=np.int64)
     data = [
         fake_lagged_timestep(eid=i, xid=2 * i, n_xid=2 * i + 1, x=np.ones(10), n_x=np.ones(10))
         for i in range(100)
@@ -227,7 +227,7 @@ def test_big_data(benchmark, Store: Type[Storage]):
             storage.get(eids % 10_000)
 
     storage = Store(10_000)
-    eids = np.arange(32)
+    eids = np.arange(32, dtype=np.int64)
     x = np.ones((64, 64, 3), dtype=np.uint8)
     data = [
         fake_lagged_timestep(eid=i, xid=2 * i, n_xid=2 * i + 1, x=x, n_x=x)

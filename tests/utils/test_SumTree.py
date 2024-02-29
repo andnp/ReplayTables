@@ -40,6 +40,8 @@ class TestSumTree:
         tree = SumTree(50, dims=1)
         tree.update(0, np.arange(50), np.ones(50))
 
+        assert tree.total() == 50
+
         rng = np.random.default_rng(0)
         samples = tree.sample(rng, 10000)
 

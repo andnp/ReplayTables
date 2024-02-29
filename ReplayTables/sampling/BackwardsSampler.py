@@ -36,7 +36,7 @@ class BackwardsSampler(IndexSampler):
         return np.ones(len(idxs))
 
     def sample(self, n: int) -> IDXs:
-        idxs: Any = self._rng.integers(0, self._mapper.size, size=n)
+        idxs: Any = self._rng.integers(0, self._mapper.size, size=n, dtype=np.int64)
         reset_eids = self._storage.meta.get_items_by_idx(idxs).eids
 
         if self._prior_eids is None or self._batch_size != n:

@@ -1,3 +1,4 @@
+import numpy as np
 from typing import Any
 from ReplayTables.ingress.IndexMapper import IndexMapper
 from ReplayTables.interface import EID, IDX, EIDs, IDXs
@@ -14,7 +15,7 @@ class CircularMapper(IndexMapper):
 
     def eids2idxs(self, eids: EIDs) -> IDXs:
         idxs: Any = eids % self._max_size
-        return idxs
+        return idxs.astype(np.int64)
 
     def add_eid(self, eid: EID, /, **kwargs: Any) -> IDX:
         self._size = min(self._size + 1, self._max_size)
