@@ -13,7 +13,7 @@ pub struct SumTree {
     #[pyo3(get)]
     size: u32,
     #[pyo3(get)]
-    dims: u32,
+    dims: usize,
     total_size: u32,
     raw: Vec<Array2<f64>>,
 }
@@ -38,7 +38,7 @@ impl SumTree {
 
                 let dims = args
                     .get_item(1).unwrap()
-                    .extract::<u32>().unwrap();
+                    .extract::<usize>().unwrap();
 
                 let total_size = u32::next_power_of_two(size);
                 let n_layers = u32::ilog2(total_size) + 1;
@@ -48,7 +48,7 @@ impl SumTree {
 
                 for i in (0..n_layers).rev() {
                     let r = n_layers - i - 1;
-                    let layer = Array2::<f64>::zeros((dims as usize, usize::pow(2, i)));
+                    let layer = Array2::<f64>::zeros((dims, usize::pow(2, i)));
                     layers[r as usize] = layer;
                 }
 
@@ -66,7 +66,7 @@ impl SumTree {
 
     pub fn update(
         &mut self,
-        dim: u32,
+        dim: usize,
         idxs: PyReadonlyArray1<i64>,
         values: PyReadonlyArray1<f64>,
     ) {
@@ -77,7 +77,7 @@ impl SumTree {
 
     pub fn update_single(
         &mut self,
-        dim: u32,
+        dim: usize,
         idx: i64,
         value: f64,
     ) {
@@ -86,38 +86,38 @@ impl SumTree {
         }
 
         let mut sub_idx = idx as usize;
-        let old = self.raw[0][[dim as usize, sub_idx]];
+        let old = self.raw[0][[dim, sub_idx]];
 
         let len = self.raw.len();
         for i in 0..len {
-            self.raw[i][[dim as usize, sub_idx]] += value - old;
+            self.raw[i][[dim, sub_idx]] += value - old;
             sub_idx = sub_idx / 2;
         }
     }
 
-    pub fn get_value(&mut self, dim: u32, idx: i64) -> f64 {
-        self.raw[0][[dim as usize, idx as usize]]
+    pub fn get_value(&mut self, dim: usize, idx: i64) -> f64 {
+        self.raw[0][[dim, idx as usize]]
     }
 
     pub fn get_values<'py>(
         &mut self,
-        dim: u32,
+        dim: usize,
         idxs: PyReadonlyArray1<i64>,
         py: Python<'py>,
     ) -> &'py PyArray1<f64> {
         let idxs = idxs.as_array().map(|a| { *a as usize });
         let arr = self.raw[0]
-            .slice(s![dim as usize, ..])
+            .slice(s![dim, ..])
             .select(Axis(0), &idxs.to_vec());
 
             arr.to_pyarray(py)
     }
 
-    pub fn dim_total(&mut self, dim: u32) -> f64 {
+    pub fn dim_total(&mut self, dim: usize) -> f64 {
         *self.raw
             .last()
             .expect("")
-            .get((dim as usize, 0))
+            .get((dim, 0))
             .expect("")
     }
 
