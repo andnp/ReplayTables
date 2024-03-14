@@ -70,9 +70,8 @@ impl SumTree {
         idxs: PyReadonlyArray1<i64>,
         values: PyReadonlyArray1<f64>,
     ) {
-        for (idx, v) in iter::zip(idxs.as_array(), values.as_array()) {
-            self.update_single(dim, *idx, *v);
-        }
+        iter::zip(idxs.as_array(), values.as_array())
+            .for_each(|(idx, v)| { self.update_single(dim, *idx, *v) });
     }
 
     pub fn update_single(
@@ -88,11 +87,11 @@ impl SumTree {
         let mut sub_idx = idx as usize;
         let old = self.raw[0][[dim, sub_idx]];
 
-        let len = self.raw.len();
-        for i in 0..len {
-            self.raw[i][[dim, sub_idx]] += value - old;
-            sub_idx = sub_idx / 2;
-        }
+        self.raw.iter_mut()
+            .for_each(|level| {
+                level[[dim, sub_idx]] += value - old;
+                sub_idx = sub_idx / 2;
+            });
     }
 
     pub fn get_value(&mut self, dim: usize, idx: i64) -> f64 {
@@ -165,26 +164,25 @@ impl SumTree {
         py: Python<'py>,
     ) -> &'py PyArray1<i64> {
         let n = v.len();
-        let n_layers = self.raw.len();
 
         let w = w.as_array();
         let v = v.as_array();
         let mut totals = Array1::<f64>::zeros(n);
         let mut idxs = Array1::<i64>::zeros(n);
 
-        for i in (0..n_layers).rev() {
-            let layer = &self.raw[i];
+        self.raw.iter()
+            .rev()
+            .for_each(|layer| {
+                for j in 0..n {
+                    idxs[j] = idxs[j] * 2;
+                    let part = layer.slice(s![.., idxs[j] as usize]);
+                    let left = w.dot(&part);
 
-            for j in 0..n {
-                idxs[j] = idxs[j] * 2;
-                let part = layer.slice(s![.., idxs[j] as usize]);
-                let left = w.dot(&part);
-
-                let m = left < (v[j] - totals[j]);
-                totals[j] += if m { left } else { 0. };
-                idxs[j] += if m { 1 } else { 0 };
-            }
-        }
+                    let m = left < (v[j] - totals[j]);
+                    totals[j] += if m { left } else { 0. };
+                    idxs[j] += if m { 1 } else { 0 };
+                }
+            });
 
         idxs = idxs.map(|i| { min(*i, (self.size - 1) as i64) });
         idxs.to_pyarray(py)
