@@ -1,18 +1,18 @@
-# ReplayTables
+# replaytables
 
-[Benchmarks](https://andnp.github.io/ReplayTables/dev/bench/)
+[Benchmarks](https://andnp.github.io/replaytables/dev/bench/)
 
 ## Getting started
 
 Installation:
 ```bash
-pip install ReplayTables-andnp
+pip install replaytables
 ```
 
 Basic usage:
 ```python
 from typing import NamedTuple
-from ReplayTables.ReplayBuffer import ReplayBuffer
+from replaytables.ReplayBuffer import ReplayBuffer
 
 class Data(NamedTuple):
     x: np.ndarray
@@ -41,7 +41,7 @@ The defaults for this implementation strictly adhere to the defaults from the or
 
 ```python
 from typing import NamedTuple
-from ReplayTables.PER import PERConfig, PrioritizedReplay
+from replaytables.PER import PERConfig, PrioritizedReplay
 
 class Data(NamedTuple):
     a: float

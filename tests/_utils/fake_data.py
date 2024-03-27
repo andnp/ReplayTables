@@ -1,7 +1,7 @@
 import numpy as np
 from typing import cast, Any, Dict, Hashable, Sequence, Tuple
-from ReplayTables.interface import Batch, Timestep, LaggedTimestep, EID, XID
-from ReplayTables.ingress.LagBuffer import LagBuffer
+from replaytables.interface import Batch, Timestep, LaggedTimestep, EID, XID
+from replaytables.ingress.LagBuffer import LagBuffer
 
 _zero = np.zeros(8)
 def fake_timestep(

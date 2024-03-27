@@ -3,18 +3,6 @@
 version = 3
 
 [[package]]
-name = "ReplayTables"
-version = "0.1.0"
-dependencies = [
- "bincode",
- "hashbrown",
- "ndarray",
- "numpy",
- "pyo3",
- "serde",
-]
-
-[[package]]
 name = "ahash"
 version = "0.8.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -321,6 +309,18 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4722d768eff46b75989dd134e5c353f0d6296e5aaa3132e776cbdb56be7731aa"
 dependencies = [
  "bitflags",
+]
+
+[[package]]
+name = "replaytables"
+version = "0.1.0"
+dependencies = [
+ "bincode",
+ "hashbrown",
+ "ndarray",
+ "numpy",
+ "pyo3",
+ "serde",
 ]
 
 [[package]]

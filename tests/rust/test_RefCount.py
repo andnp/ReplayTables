@@ -1,5 +1,5 @@
 from typing import Any
-import ReplayTables.rust as ru
+import replaytables.rust as ru
 
 def test_add_and_load():
     r = ru.RefCount()

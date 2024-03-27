@@ -3,10 +3,10 @@ import numpy as np
 
 from collections import deque
 from typing import Any, Sequence, Type
-from ReplayTables.storage.BasicStorage import Storage, BasicStorage
-from ReplayTables.storage.CompressedStorage import CompressedStorage
-from ReplayTables.storage.NonArrayStorage import NonArrayStorage
-from ReplayTables.interface import LaggedTimestep, IDX, IDXs
+from replaytables.storage.BasicStorage import Storage, BasicStorage
+from replaytables.storage.CompressedStorage import CompressedStorage
+from replaytables.storage.NonArrayStorage import NonArrayStorage
+from replaytables.interface import LaggedTimestep, IDX, IDXs
 
 from tests._utils.fake_data import fake_lagged_timestep, LaggedDataStream, lagged_equal, batch_equal, lags_to_batch
 

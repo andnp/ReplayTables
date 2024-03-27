@@ -1,9 +1,9 @@
 import numpy as np
 from typing import Any
 
-from ReplayTables.storage.BasicStorage import BasicStorage
-from ReplayTables.ingress.CircularMapper import CircularMapper
-from ReplayTables.sampling.PrioritySequenceSampler import PrioritizedSequenceDistribution, PSDistributionConfig
+from replaytables.storage.BasicStorage import BasicStorage
+from replaytables.ingress.CircularMapper import CircularMapper
+from replaytables.sampling.PrioritySequenceSampler import PrioritizedSequenceDistribution, PSDistributionConfig
 
 from tests._utils.fake_data import LaggedDataStream
 

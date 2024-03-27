@@ -1,6 +1,6 @@
 import numpy as np
 import pickle
-from ReplayTables.ReplayBuffer import ReplayBuffer
+from replaytables.ReplayBuffer import ReplayBuffer
 
 from tests._utils.fake_data import fake_timestep
 

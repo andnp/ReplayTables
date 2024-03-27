@@ -1,9 +1,9 @@
 import numpy as np
 
 from typing import Any
-from ReplayTables.interface import Batch, IDXs, Item, LaggedTimestep, Timestep
-from ReplayTables.ReplayBuffer import ReplayBufferInterface
-from ReplayTables.ingress.LagBuffer import LagBuffer
+from replaytables.interface import Batch, IDXs, Item, LaggedTimestep, Timestep
+from replaytables.ReplayBuffer import ReplayBufferInterface
+from replaytables.ingress.LagBuffer import LagBuffer
 
 from tests._utils.fake_data import batch_equal
 

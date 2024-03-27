@@ -1,7 +1,7 @@
 import numpy as np
 
-from ReplayTables.ingress.LagBuffer import LagBuffer
-from ReplayTables.interface import Timestep
+from replaytables.ingress.LagBuffer import LagBuffer
+from replaytables.interface import Timestep
 
 class TestLagBuffer:
     def test_1_step(self):

@@ -12,5 +12,5 @@ __pycache__/
 env/
 dist/
 target/
-ReplayTables_andnp*
+replaytables_andnp*
 *.so

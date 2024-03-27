@@ -1,4 +1,4 @@
-from ReplayTables._utils.MinMaxHeap import MinMaxHeap
+from replaytables._utils.MinMaxHeap import MinMaxHeap
 
 class TestMinMaxHeap:
     def test_can_track_stats(self):

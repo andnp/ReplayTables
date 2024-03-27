@@ -1,7 +1,7 @@
 import pickle
 import numpy as np
 
-from ReplayTables._utils.SumTree import SumTree
+from replaytables._utils.SumTree import SumTree
 
 class TestSumTree:
     def test_can_add_stuff(self):

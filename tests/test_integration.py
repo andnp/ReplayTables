@@ -2,12 +2,12 @@ import pytest
 import numpy as np
 
 from typing import Type
-from ReplayTables.interface import Timestep
+from replaytables.interface import Timestep
 
-from ReplayTables.ReplayBuffer import ReplayBuffer
-from ReplayTables.BackwardsReplay import BackwardsReplay
-from ReplayTables.PER import PrioritizedReplay
-from ReplayTables.PSER import PrioritizedSequenceReplay
+from replaytables.ReplayBuffer import ReplayBuffer
+from replaytables.BackwardsReplay import BackwardsReplay
+from replaytables.PER import PrioritizedReplay
+from replaytables.PSER import PrioritizedSequenceReplay
 
 BUFFERS = [
     ReplayBuffer,

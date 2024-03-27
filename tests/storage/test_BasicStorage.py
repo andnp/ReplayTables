@@ -1,7 +1,7 @@
 import numpy as np
 from typing import cast, Any
-from ReplayTables.storage.BasicStorage import BasicStorage
-from ReplayTables.interface import LaggedTimestep, EID, XID
+from replaytables.storage.BasicStorage import BasicStorage
+from replaytables.interface import LaggedTimestep, EID, XID
 
 def test_inferred_types1():
     storage = BasicStorage(10)

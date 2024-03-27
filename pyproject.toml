@@ -10,13 +10,13 @@ mypy_path = "typings"
 
 [tool.maturin]
 features = ["pyo3/extension-module"]
-module-name = "ReplayTables.rust"
+module-name = "replaytables.rust"
 
 [tool.ruff.lint]
 ignore = ['E701']
 
 [project]
-name = "ReplayTables-andnp"
+name = "replaytables"
 version = "6.2.16"
 description = "A simple replay buffer implementation in python for sampling n-step trajectories"
 authors = [

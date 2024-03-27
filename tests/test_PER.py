@@ -2,8 +2,8 @@ import pickle
 import numpy as np
 from typing import cast, Any
 
-from ReplayTables.interface import EID, Timestep
-from ReplayTables.PER import PrioritizedReplay, PERConfig
+from replaytables.interface import EID, Timestep
+from replaytables.PER import PrioritizedReplay, PERConfig
 
 from tests._utils.fake_data import fake_timestep
 
