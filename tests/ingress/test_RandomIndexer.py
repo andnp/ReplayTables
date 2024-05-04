@@ -1,5 +1,4 @@
 import numpy as np
-from typing import Any
 
 from ReplayTables.ingress.RandomIndexer import RandomIndexer
 
