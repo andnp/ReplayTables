@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1714445195797,
+  "lastUpdate": 1714871805160,
   "repoUrl": "https://github.com/andnp/ReplayTables",
   "entries": {
     "Python Benchmark with pytest-benchmark": [
@@ -12640,6 +12640,170 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 8.739694384799395e-7",
             "extra": "mean: 16.76036555240822 usec\nrounds: 37483"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "panahiparham@gmail.com",
+            "name": "Parham Panahi",
+            "username": "panahiparham"
+          },
+          "committer": {
+            "email": "andnpatterson@gmail.com",
+            "name": "Andy Patterson",
+            "username": "andnp"
+          },
+          "distinct": true,
+          "id": "5eaaf3ebd53c2c35c19ad67bf31285d8d075776e",
+          "message": "style: removed unused imports",
+          "timestamp": "2024-05-04T19:13:42-06:00",
+          "tree_id": "d7951a9c828b14eb9ea973e00eaae6228695790c",
+          "url": "https://github.com/andnp/ReplayTables/commit/5eaaf3ebd53c2c35c19ad67bf31285d8d075776e"
+        },
+        "date": 1714871804482,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "tests/storage/test_Storage.py::test_small_data[BasicStorage]",
+            "value": 784.2606084924797,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00003959075046130617",
+            "extra": "mean: 1.2750863541676773 msec\nrounds: 720"
+          },
+          {
+            "name": "tests/storage/test_Storage.py::test_small_data[CompressedStorage]",
+            "value": 47.29455488622657,
+            "unit": "iter/sec",
+            "range": "stddev: 0.007988382656707423",
+            "extra": "mean: 21.144083127658877 msec\nrounds: 47"
+          },
+          {
+            "name": "tests/storage/test_Storage.py::test_small_data[NonArrayStorage]",
+            "value": 552.7145536197777,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000020312249648300003",
+            "extra": "mean: 1.809252159999966 msec\nrounds: 550"
+          },
+          {
+            "name": "tests/storage/test_Storage.py::test_big_data[BasicStorage]",
+            "value": 253.51928572871665,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00007272100540922302",
+            "extra": "mean: 3.9444730886078228 msec\nrounds: 158"
+          },
+          {
+            "name": "tests/storage/test_Storage.py::test_big_data[CompressedStorage]",
+            "value": 30.867216262050086,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0004915201706413259",
+            "extra": "mean: 32.39683136666448 msec\nrounds: 30"
+          },
+          {
+            "name": "tests/storage/test_Storage.py::test_big_data[NonArrayStorage]",
+            "value": 548.9050997026396,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00001926107060891365",
+            "extra": "mean: 1.8218085431192634 msec\nrounds: 545"
+          },
+          {
+            "name": "tests/test_PER.py::TestBenchmarks::test_per_add",
+            "value": 63834.00888205489,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000002068221299684186",
+            "extra": "mean: 15.665630555143178 usec\nrounds: 360"
+          },
+          {
+            "name": "tests/test_PER.py::TestBenchmarks::test_per_sample",
+            "value": 22045.542913788635,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000003805560780960196",
+            "extra": "mean: 45.360642915921964 usec\nrounds: 6091"
+          },
+          {
+            "name": "tests/test_ReplayBuffer.py::TestBenchmarks::test_replay_buffer_add",
+            "value": 148196.0827231952,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000020988143871081495",
+            "extra": "mean: 6.7478166873535255 usec\nrounds: 13717"
+          },
+          {
+            "name": "tests/test_ReplayBuffer.py::TestBenchmarks::test_replay_buffer_sample",
+            "value": 52172.85661669638,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000017910063928061179",
+            "extra": "mean: 19.167054764641346 usec\nrounds: 7797"
+          },
+          {
+            "name": "tests/test_integration.py::test_1_step_loop[ReplayBuffer]",
+            "value": 322.31518401317777,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00008013222612739093",
+            "extra": "mean: 3.102553182722894 msec\nrounds: 301"
+          },
+          {
+            "name": "tests/test_integration.py::test_1_step_loop[BackwardsReplay]",
+            "value": 133.82715195489482,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000046144495820623535",
+            "extra": "mean: 7.472325200023988 msec\nrounds: 5"
+          },
+          {
+            "name": "tests/test_integration.py::test_1_step_loop[PrioritizedReplay]",
+            "value": 191.65630015876465,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00008508206426256208",
+            "extra": "mean: 5.21767350810601 msec\nrounds: 185"
+          },
+          {
+            "name": "tests/test_integration.py::test_1_step_loop[PrioritizedSequenceReplay]",
+            "value": 224.527515207149,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00007301763061949014",
+            "extra": "mean: 4.453797117370672 msec\nrounds: 213"
+          },
+          {
+            "name": "tests/test_integration.py::test_3_step_loop[ReplayBuffer]",
+            "value": 317.80413628501054,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00006685249697500628",
+            "extra": "mean: 3.146592148514984 msec\nrounds: 303"
+          },
+          {
+            "name": "tests/test_integration.py::test_3_step_loop[BackwardsReplay]",
+            "value": 319.3260802020102,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00005688233557253438",
+            "extra": "mean: 3.1315951373824085 msec\nrounds: 313"
+          },
+          {
+            "name": "tests/test_integration.py::test_3_step_loop[PrioritizedReplay]",
+            "value": 321.0450634129081,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000034132958371765436",
+            "extra": "mean: 3.114827524115711 msec\nrounds: 311"
+          },
+          {
+            "name": "tests/test_integration.py::test_3_step_loop[PrioritizedSequenceReplay]",
+            "value": 318.31167551969446,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00011567778076552652",
+            "extra": "mean: 3.1415749936515556 msec\nrounds: 315"
+          },
+          {
+            "name": "tests/utils/test_SumTree.py::TestBenchmarks::test_sumtree_update",
+            "value": 545501.4320558688,
+            "unit": "iter/sec",
+            "range": "stddev: 2.931504657667844e-7",
+            "extra": "mean: 1.8331757558018342 usec\nrounds: 161787"
+          },
+          {
+            "name": "tests/utils/test_SumTree.py::TestBenchmarks::test_sumtree_sample",
+            "value": 59654.23400033313,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000026434098846724237",
+            "extra": "mean: 16.763269477140813 usec\nrounds: 37313"
           }
         ]
       }
