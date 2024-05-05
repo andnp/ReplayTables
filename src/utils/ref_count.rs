@@ -106,11 +106,13 @@ impl RefCount {
         idx
     }
 
-    pub fn __setstate__(&mut self, state: &PyBytes) -> PyResult<()> {
+    pub fn __setstate__<'py>(&mut self, state: Bound<'py, PyBytes>) -> PyResult<()> {
         *self = deserialize(state.as_bytes()).unwrap();
         Ok(())
     }
-    pub fn __getstate__<'py>(&self, py: Python<'py>) -> PyResult<&'py PyBytes> {
-        Ok(PyBytes::new(py, &serialize(&self).unwrap()))
+    pub fn __getstate__<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyBytes>> {
+        let raw = &serialize(&self).unwrap();
+        let bytes = PyBytes::new_bound(py, raw);
+        Ok(bytes)
     }
 }

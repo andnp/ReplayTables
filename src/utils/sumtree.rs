@@ -22,7 +22,7 @@ pub struct SumTree {
 impl SumTree {
     #[new]
     #[pyo3(signature = (*args))]
-    fn new(args: &PyTuple) -> Self {
+    fn new<'py>(args: Bound<'py, PyTuple>) -> Self {
         match args.len() {
             0 => SumTree {
                 size: 0,
@@ -103,13 +103,13 @@ impl SumTree {
         dim: usize,
         idxs: PyReadonlyArray1<i64>,
         py: Python<'py>,
-    ) -> &'py PyArray1<f64> {
+    ) -> Bound<'py, PyArray1<f64>> {
         let idxs = idxs.as_array().map(|a| { *a as usize });
         let arr = self.raw[0]
             .slice(s![dim, ..])
             .select(Axis(0), &idxs.to_vec());
 
-            arr.to_pyarray(py)
+            arr.to_pyarray_bound(py)
     }
 
     pub fn dim_total(&mut self, dim: usize) -> f64 {
@@ -123,13 +123,13 @@ impl SumTree {
     pub fn all_totals<'py>(
         &mut self,
         py: Python<'py>,
-    ) -> &'py PyArray1<f64> {
+    ) -> Bound<'py, PyArray1<f64>> {
         let arr = self.raw
             .last()
             .expect("")
             .slice(s![.., 0]);
 
-        arr.to_pyarray(py)
+        arr.to_pyarray_bound(py)
     }
 
     pub fn total(
@@ -147,14 +147,14 @@ impl SumTree {
     pub fn effective_weights<'py>(
         &mut self,
         py: Python<'py>,
-    ) -> &'py PyArray1<f64> {
+    ) -> Bound<'py, PyArray1<f64>> {
         let arr = self.raw
             .last()
             .expect("")
             .slice(s![.., 0]);
 
         let arr: Array1<f64> = arr.map(safe_invert);
-        arr.to_pyarray(py)
+        arr.to_pyarray_bound(py)
     }
 
     pub fn query<'py>(
@@ -162,8 +162,8 @@ impl SumTree {
         v: PyReadonlyArray1<f64>,
         w: PyReadonlyArray1<f64>,
         py: Python<'py>,
-    ) -> &'py PyArray1<i64> {
-        let n = v.len();
+    ) -> Bound<'py, PyArray1<i64>> {
+        let n = v.len().expect("Failed to get array length");
 
         let w = w.as_array();
         let v = v.as_array();
@@ -185,16 +185,16 @@ impl SumTree {
             });
 
         idxs = idxs.map(|i| { min(*i, (self.size - 1) as i64) });
-        idxs.to_pyarray(py)
+        idxs.to_pyarray_bound(py)
     }
 
     // enable pickling this data type
-    pub fn __setstate__(&mut self, state: &PyBytes) -> PyResult<()> {
+    pub fn __setstate__<'py>(&mut self, state: Bound<'py, PyBytes>) -> PyResult<()> {
         *self = deserialize(state.as_bytes()).unwrap();
         Ok(())
     }
-    pub fn __getstate__<'py>(&self, py: Python<'py>) -> PyResult<&'py PyBytes> {
-        Ok(PyBytes::new(py, &serialize(&self).unwrap()))
+    pub fn __getstate__<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyBytes>> {
+        Ok(PyBytes::new_bound(py, &serialize(&self).unwrap()))
     }
 }
 
