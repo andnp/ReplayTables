@@ -67,7 +67,7 @@ pub struct MetadataStorage {
 impl MetadataStorage {
     #[new]
     #[pyo3(signature = (*args))]
-    fn new(args: &PyTuple) -> Self {
+    fn new<'py>(args: Bound<'py, PyTuple>) -> Self {
         match args.len() {
             // loading from pickle
             0 => MetadataStorage {
@@ -127,12 +127,12 @@ impl MetadataStorage {
 
         Python::with_gil(|py| {
             Items {
-                idxs: idxs.to_pyarray(py).to_owned(),
-                eids: eids.to_pyarray(py).to_owned(),
-                xids: xids.to_pyarray(py).to_owned(),
-                sidxs: sidxs.to_pyarray(py).to_owned(),
-                n_xids: n_xids.to_pyarray(py).to_owned(),
-                n_sidxs: n_sidxs.to_pyarray(py).to_owned(),
+                idxs: idxs.to_pyarray_bound(py).into(),
+                eids: eids.to_pyarray_bound(py).into(),
+                xids: xids.to_pyarray_bound(py).into(),
+                sidxs: sidxs.to_pyarray_bound(py).into(),
+                n_xids: n_xids.to_pyarray_bound(py).into(),
+                n_sidxs: n_sidxs.to_pyarray_bound(py).into(),
             }
         })
     }
@@ -181,11 +181,11 @@ impl MetadataStorage {
     }
 
     // enable pickling this data type
-    pub fn __setstate__(&mut self, state: &PyBytes) -> PyResult<()> {
+    pub fn __setstate__<'py>(&mut self, state: Bound<'py, PyBytes>) -> PyResult<()> {
         *self = deserialize(state.as_bytes()).unwrap();
         Ok(())
     }
-    pub fn __getstate__<'py>(&self, py: Python<'py>) -> PyResult<&'py PyBytes> {
-        Ok(PyBytes::new(py, &serialize(&self).unwrap()))
+    pub fn __getstate__<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyBytes>> {
+        Ok(PyBytes::new_bound(py, &serialize(&self).unwrap()))
     }
 }
