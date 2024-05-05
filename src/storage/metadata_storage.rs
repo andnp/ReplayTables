@@ -4,7 +4,7 @@ use bincode::{deserialize, serialize};
 use serde::{Deserialize, Serialize};
 
 
-#[pyclass(module = "rust")]
+#[pyclass(module = "rust", frozen)]
 #[derive(Serialize, Deserialize, Clone, Copy)]
 pub struct Item {
     #[pyo3(get)]
