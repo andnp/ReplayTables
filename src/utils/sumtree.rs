@@ -6,7 +6,7 @@ use pyo3::{prelude::*, types::{PyBytes, PyTuple}};
 use bincode::{deserialize, serialize};
 use serde::{Deserialize, Serialize};
 
-#[pyclass(module = "rust")]
+#[pyclass(module = "rust", subclass)]
 #[derive(Serialize, Deserialize)]
 
 pub struct SumTree {
