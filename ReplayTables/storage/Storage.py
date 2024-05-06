@@ -1,7 +1,7 @@
 import numpy as np
 from abc import abstractmethod
 from typing import Any
-from ReplayTables.interface import Batch, LaggedTimestep, IDX, IDXs, Item
+from ReplayTables.interface import Batch, LaggedTimestep, Item, StorageIdx, StorageIdxs
 from ReplayTables.storage.MetadataStorage import MetadataStorage
 
 class Storage:
@@ -19,21 +19,21 @@ class Storage:
         ...
 
     @abstractmethod
-    def get(self, idxs: IDXs) -> Batch:
+    def get(self, idxs: StorageIdxs) -> Batch:
         ...
 
     @abstractmethod
-    def get_item(self, idx: IDX) -> LaggedTimestep:
+    def get_item(self, idx: StorageIdx) -> LaggedTimestep:
         ...
 
     @abstractmethod
-    def set(self, idx: IDX, transition: LaggedTimestep) -> Item:
+    def set(self, idx: StorageIdx, transition: LaggedTimestep) -> Item:
         ...
 
     @abstractmethod
-    def add(self, idx: IDX, transition: LaggedTimestep, /, **kwargs: Any) -> Item:
+    def add(self, idx: StorageIdx, transition: LaggedTimestep, /, **kwargs: Any) -> Item:
         ...
 
     @abstractmethod
-    def delete(self, idx: IDX):
+    def delete(self, idx: StorageIdx):
         ...

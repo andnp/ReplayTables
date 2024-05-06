@@ -1,7 +1,7 @@
 import numpy as np
 from abc import abstractmethod
 from typing import Any
-from ReplayTables.interface import IDX, IDXs, LaggedTimestep, Batch
+from ReplayTables.interface import LaggedTimestep, Batch, StorageIdx, StorageIdxs
 from ReplayTables.Distributions import UniformDistribution
 from ReplayTables.storage.Storage import Storage
 from ReplayTables.ingress.IndexMapper import IndexMapper
@@ -25,21 +25,21 @@ class IndexSampler:
         self._built = True
 
     @abstractmethod
-    def replace(self, idx: IDX, transition: LaggedTimestep, /, **kwargs: Any) -> None:
+    def replace(self, idx: StorageIdx, transition: LaggedTimestep, /, **kwargs: Any) -> None:
         ...
 
     @abstractmethod
-    def update(self, idxs: IDXs, batch: Batch, /, **kwargs: Any) -> None:
+    def update(self, idxs: StorageIdxs, batch: Batch, /, **kwargs: Any) -> None:
         ...
 
     @abstractmethod
-    def isr_weights(self, idxs: IDXs) -> np.ndarray:
+    def isr_weights(self, idxs: StorageIdxs) -> np.ndarray:
         ...
 
     @abstractmethod
-    def sample(self, n: int) -> IDXs:
+    def sample(self, n: int) -> StorageIdxs:
         ...
 
     @abstractmethod
-    def stratified_sample(self, n: int) -> IDXs:
+    def stratified_sample(self, n: int) -> StorageIdxs:
         ...

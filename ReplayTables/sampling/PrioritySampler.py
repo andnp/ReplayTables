@@ -1,7 +1,7 @@
 import numpy as np
 from typing import Any
 from ReplayTables.Distributions import MixinUniformDistribution, SubDistribution, PrioritizedDistribution, MixtureDistribution
-from ReplayTables.interface import IDX, IDXs, LaggedTimestep, Batch
+from ReplayTables.interface import LaggedTimestep, Batch, StorageIdx, StorageIdxs
 from ReplayTables.sampling.IndexSampler import IndexSampler
 
 class PrioritySampler(IndexSampler):
@@ -22,7 +22,7 @@ class PrioritySampler(IndexSampler):
             SubDistribution(d=self._uniform, p=uniform_probability)
         ])
 
-    def replace(self, idx: IDX, transition: LaggedTimestep, /, **kwargs: Any) -> None:
+    def replace(self, idx: StorageIdx, transition: LaggedTimestep, /, **kwargs: Any) -> None:
         idxs = np.array([idx], dtype=np.int64)
 
         priority: float = kwargs['priority']
@@ -30,23 +30,23 @@ class PrioritySampler(IndexSampler):
         self._uniform.update(idxs)
         self._p_dist.update(idxs, priorities)
 
-    def update(self, idxs: IDXs, batch: Batch, /, **kwargs: Any) -> None:
+    def update(self, idxs: StorageIdxs, batch: Batch, /, **kwargs: Any) -> None:
         priorities = kwargs['priorities']
         self._uniform.update(idxs)
         self._p_dist.update(idxs, priorities)
 
-    def isr_weights(self, idxs: IDXs):
+    def isr_weights(self, idxs: StorageIdxs):
         return self._dist.isr(self._target, idxs)
 
-    def sample(self, n: int) -> IDXs:
+    def sample(self, n: int) -> StorageIdxs:
         idxs: Any = self._dist.sample(self._rng, n)
         return idxs
 
-    def stratified_sample(self, n: int) -> IDXs:
+    def stratified_sample(self, n: int) -> StorageIdxs:
         idxs: Any = self._dist.stratified_sample(self._rng, n)
         return idxs
 
-    def mask_sample(self, idx: IDX):
+    def mask_sample(self, idx: StorageIdx):
         idxs = np.array([idx], dtype=np.int64)
         zero = np.zeros(1)
 

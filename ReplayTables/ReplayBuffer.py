@@ -2,7 +2,7 @@ import numpy as np
 from abc import abstractmethod
 from typing import Any
 from ReplayTables._utils.logger import logger
-from ReplayTables.interface import Timestep, LaggedTimestep, Batch, EID, EIDs, Item
+from ReplayTables.interface import Timestep, LaggedTimestep, Batch, Item, TransId, TransIds
 from ReplayTables.ingress.IndexMapper import IndexMapper
 from ReplayTables.ingress.CircularMapper import CircularMapper
 from ReplayTables.ingress.LagBuffer import LagBuffer
@@ -82,22 +82,22 @@ class ReplayBufferInterface:
         idxs: Any = np.asarray(idx_list, dtype=np.int64)
         return self._storage.get(idxs)
 
-    def isr_weights(self, eids: EIDs) -> np.ndarray:
-        idxs = self._idx_mapper.eids2idxs(eids)
+    def isr_weights(self, tids: TransIds) -> np.ndarray:
+        idxs = self._idx_mapper.eids2idxs(tids)
         weights = self._sampler.isr_weights(idxs)
         return weights
 
-    def get(self, eids: EIDs):
-        idxs = self._idx_mapper.eids2idxs(eids)
+    def get(self, tids: TransIds):
+        idxs = self._idx_mapper.eids2idxs(tids)
         return self._storage.get(idxs)
 
-    def next_eid(self) -> EID:
+    def next_eid(self) -> TransId:
         eid: Any = self._t
         self._t += 1
         return eid
 
-    def last_eid(self) -> EID:
-        assert self._t > 0, "No previous EID!"
+    def last_eid(self) -> TransId:
+        assert self._t > 0, "No previous transition id!"
         last: Any = self._t - 1
         return last
 
@@ -135,4 +135,4 @@ class ReplayBuffer(ReplayBufferInterface):
         self._lag_buffer.flush()
 
     def _on_add(self, item: Item, transition: LaggedTimestep):
-        self._sampler.replace(item.idx, transition)
+        self._sampler.replace(item.storage_idx, transition)

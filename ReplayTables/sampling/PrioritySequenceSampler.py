@@ -8,7 +8,7 @@ from ReplayTables._utils.SumTree import SumTree
 from ReplayTables.sampling.IndexSampler import IndexSampler
 from ReplayTables.storage.Storage import Storage
 from ReplayTables.ingress.IndexMapper import IndexMapper
-from ReplayTables.interface import IDX, Batch, IDXs, EIDs, LaggedTimestep
+from ReplayTables.interface import Batch, LaggedTimestep, StorageIdx, StorageIdxs, TransIds
 from ReplayTables._utils.jit import try2jit
 from ReplayTables.sampling.tools import back_sequence
 
@@ -49,7 +49,7 @@ class PrioritySequenceSampler(IndexSampler):
             SubDistribution(d=self._uniform, p=self._uniform_prob)
         ])
 
-    def replace(self, idx: IDX, transition: LaggedTimestep, /, **kwargs: Any) -> None:
+    def replace(self, idx: StorageIdx, transition: LaggedTimestep, /, **kwargs: Any) -> None:
         self._terminal.discard(int(idx))
         if transition.terminal:
             self._terminal.add(int(idx))
@@ -58,23 +58,23 @@ class PrioritySequenceSampler(IndexSampler):
         self._uniform.update_single(idx)
         self._ps_dist.update_single(idx, priority)
 
-    def update(self, idxs: IDXs, batch: Batch, /, **kwargs: Any) -> None:
+    def update(self, idxs: StorageIdxs, batch: Batch, /, **kwargs: Any) -> None:
         priorities = kwargs['priorities']
         self._uniform.update(idxs)
-        self._ps_dist.update_seq(batch.eid, idxs, priorities, terminal=self._terminal)
+        self._ps_dist.update_seq(batch.trans_id, idxs, priorities, terminal=self._terminal)
 
-    def isr_weights(self, idxs: IDXs):
+    def isr_weights(self, idxs: StorageIdxs):
         return self._dist.isr(self._target, idxs)
 
-    def sample(self, n: int) -> IDXs:
+    def sample(self, n: int) -> StorageIdxs:
         idxs: Any = self._dist.sample(self._rng, n)
         return idxs
 
-    def stratified_sample(self, n: int) -> IDXs:
+    def stratified_sample(self, n: int) -> StorageIdxs:
         idxs: Any = self._dist.stratified_sample(self._rng, n)
         return idxs
 
-    def mask_sample(self, idx: IDX):
+    def mask_sample(self, idx: StorageIdx):
         idxs = np.array([idx], dtype=np.int64)
         zero = np.zeros(1)
 
@@ -103,8 +103,8 @@ class PrioritizedSequenceDistribution(PrioritizedDistribution):
         # pre-compute and cache this
         self._trace = np.cumprod(np.ones(self._c.trace_depth) * self._c.trace_decay)
 
-    def update_seq(self, eids: EIDs, idxs: IDXs, priorities: np.ndarray, terminal: Set[int]):
-        b_eids: Any = back_sequence(eids, self._c.trace_depth)
+    def update_seq(self, tids: TransIds, idxs: StorageIdxs, priorities: np.ndarray, terminal: Set[int]):
+        b_eids: Any = back_sequence(tids, self._c.trace_depth)
 
         b_idxs = self._mapper.eids2idxs(b_eids)
         idx_mask = _term_sequence(b_idxs, terminal) | (~self._mapper.has_eids(b_eids))

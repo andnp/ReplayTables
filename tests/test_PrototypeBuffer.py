@@ -29,9 +29,9 @@ class TestRandomEgressBuffer:
         assert buffer.size() == 1
 
         samples = buffer.sample(10)
-        weights = buffer.isr_weights(samples.eid)
+        weights = buffer.isr_weights(samples.trans_id)
         assert np.all(samples.a == 1)
-        assert np.all(samples.eid == 0)
+        assert np.all(samples.trans_id == 0)
         assert np.all(weights == 1.0)
 
         # should be able to add a few more points

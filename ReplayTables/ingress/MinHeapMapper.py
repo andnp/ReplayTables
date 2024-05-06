@@ -1,7 +1,7 @@
 import numpy as np
 from typing import Any, Dict
 from ReplayTables.ingress.IndexMapper import IndexMapper
-from ReplayTables.interface import EID, IDX, EIDs, IDXs, LaggedTimestep
+from ReplayTables.interface import LaggedTimestep, StorageIdx, StorageIdxs, TransId, TransIds
 from ReplayTables._utils.MinMaxHeap import MinMaxHeap
 
 class MinHeapMapper(IndexMapper):
@@ -9,18 +9,18 @@ class MinHeapMapper(IndexMapper):
         super().__init__(max_size)
 
         self._heap = MinMaxHeap()
-        self._eid2idx: Dict[EID, IDX] = {}
+        self._eid2idx: Dict[TransId, StorageIdx] = {}
         self._idx2eid = np.zeros(max_size, dtype=np.int64)
 
-    def eid2idx(self, eid: EID) -> IDX:
+    def eid2idx(self, tid: TransId) -> StorageIdx:
         default: Any = -1
-        return self._eid2idx.get(eid, default)
+        return self._eid2idx.get(tid, default)
 
-    def eids2idxs(self, eids: EIDs) -> IDXs:
+    def eids2idxs(self, tids: TransIds) -> StorageIdxs:
         f = np.vectorize(self.eid2idx, otypes=[np.int64])
-        return f(eids)
+        return f(tids)
 
-    def add_transition(self, transition: LaggedTimestep, /, **kwargs: Any) -> IDX:
+    def add_transition(self, transition: LaggedTimestep, /, **kwargs: Any) -> StorageIdx:
         # check if priority is given, else assume max
         if 'priority' in kwargs:
             p = kwargs['priority']
@@ -35,26 +35,26 @@ class MinHeapMapper(IndexMapper):
             _, idx = self._heap.min()
             self._heap.update(p, idx)
 
-            last_eid: Any = self._idx2eid[idx]
-            del self._eid2idx[last_eid]
+            last_tid: Any = self._idx2eid[idx]
+            del self._eid2idx[last_tid]
 
         else:
             self._heap.add(p, idx)
 
-        eid = transition.eid
-        self._eid2idx[eid] = idx
-        self._idx2eid[idx] = eid
+        tid = transition.trans_id
+        self._eid2idx[tid] = idx
+        self._idx2eid[idx] = tid
 
         self._size = min(self._size + 1, self._max_size)
         return idx
 
-    def update_eid(self, eid: EID, /, **kwargs: Any):
+    def update_eid(self, tid: TransId, /, **kwargs: Any):
         assert 'priority' in kwargs
         p = kwargs['priority']
 
-        idx = self._eid2idx[eid]
+        idx = self._eid2idx[tid]
         self._heap.update(p, idx)
 
-    def has_eids(self, eids: EIDs):
+    def has_eids(self, tids: TransIds):
         f = np.vectorize(lambda e: e in self._eid2idx, otypes=[np.bool_])
-        return f(eids)
+        return f(tids)

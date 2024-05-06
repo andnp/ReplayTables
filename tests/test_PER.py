@@ -2,7 +2,7 @@ import pickle
 import numpy as np
 from typing import cast, Any
 
-from ReplayTables.interface import EID, Timestep
+from ReplayTables.interface import Timestep, TransId
 from ReplayTables.PER import PrioritizedReplay, PERConfig
 
 from tests._utils.fake_data import fake_timestep
@@ -25,9 +25,9 @@ class TestPER:
         assert buffer.size() == 1
 
         samples = buffer.sample(10)
-        weights = buffer.isr_weights(samples.eid)
+        weights = buffer.isr_weights(samples.trans_id)
         assert np.all(samples.a == 1)
-        assert np.all(samples.eid == 0)
+        assert np.all(samples.trans_id == 0)
         assert np.all(weights == 0.2)
 
         # should be able to add a few more points
@@ -136,7 +136,7 @@ class TestPER:
         batch = buffer.sample(512)
         assert np.unique(batch.a).shape == (5,)
 
-        buffer.delete_sample(cast(EID, 2))
+        buffer.delete_sample(cast(TransId, 2))
         batch = buffer.sample(512)
         assert np.unique(batch.a).shape == (4,)
         assert 2 not in batch.a

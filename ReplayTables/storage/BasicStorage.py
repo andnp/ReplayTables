@@ -2,7 +2,7 @@ import numpy as np
 import ReplayTables._utils.np as npu
 
 from typing import Any, Dict
-from ReplayTables.interface import Batch, LaggedTimestep, IDX, IDXs, SIDX, SIDXs, Item
+from ReplayTables.interface import Batch, LaggedTimestep, SIDX, SIDXs, Item, StorageIdx, StorageIdxs
 from ReplayTables.storage.Storage import Storage
 
 
@@ -12,7 +12,7 @@ class BasicStorage(Storage):
 
         self._built = False
 
-        self._extras: Dict[IDX, Any] = {}
+        self._extras: Dict[StorageIdx, Any] = {}
         self._r = np.ones(max_size, dtype=np.float_) * np.nan
         self._term = np.empty(max_size, dtype=np.bool_)
         self._gamma = np.ones(max_size, dtype=np.float_) * np.nan
@@ -30,12 +30,12 @@ class BasicStorage(Storage):
 
         self._state_store[-1] = 0
 
-    def add(self, idx: IDX, transition: LaggedTimestep, /, **kwargs: Any):
+    def add(self, idx: StorageIdx, transition: LaggedTimestep, /, **kwargs: Any):
         if not self._built: self._deferred_init(transition)
 
         # stash metadata
         item, last_item = self.meta.add_item(
-            eid=transition.eid,
+            eid=transition.trans_id,
             idx=idx,
             xid=transition.xid,
             n_xid=transition.n_xid,
@@ -61,7 +61,7 @@ class BasicStorage(Storage):
 
         return item
 
-    def set(self, idx: IDX, transition: LaggedTimestep):
+    def set(self, idx: StorageIdx, transition: LaggedTimestep):
         if not self._built: self._deferred_init(transition)
 
         item = self.meta.get_item_by_idx(idx)
@@ -80,7 +80,7 @@ class BasicStorage(Storage):
 
         return item
 
-    def get(self, idxs: IDXs) -> Batch:
+    def get(self, idxs: StorageIdxs) -> Batch:
         items = self.meta.get_items_by_idx(idxs)
 
         x = self._load_states(items.sidxs)
@@ -92,11 +92,11 @@ class BasicStorage(Storage):
             r=self._r[idxs],
             gamma=self._gamma[idxs],
             terminal=self._term[idxs],
-            eid=items.eids,
+            trans_id=items.trans_ids,
             xp=xp,
         )
 
-    def get_item(self, idx: IDX) -> LaggedTimestep:
+    def get_item(self, idx: StorageIdx) -> LaggedTimestep:
         item = self.meta.get_item_by_idx(idx)
         n_x = None
 
@@ -110,14 +110,14 @@ class BasicStorage(Storage):
             r=self._r[idx],
             gamma=self._gamma[idx],
             terminal=self._term[idx],
-            eid=item.eid,
+            trans_id=item.trans_id,
             xid=item.xid,
             extra=self._extras[idx],
             n_xid=item.n_xid,
             n_x=n_x,
         )
 
-    def delete(self, idx: IDX):
+    def delete(self, idx: StorageIdx):
         item = self.meta.get_item_by_idx(idx)
         self.delete_item(item)
 
@@ -125,8 +125,8 @@ class BasicStorage(Storage):
         if not self.meta.has_xid(item.xid):
             self._remove_state(item.sidx)
 
-        if item.idx in self._extras:
-            del self._extras[item.idx]
+        if item.storage_idx in self._extras:
+            del self._extras[item.storage_idx]
 
         if item.n_xid is not None and not self.meta.has_xid(item.n_xid):
             assert item.n_sidx is not None

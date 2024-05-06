@@ -1,10 +1,10 @@
 import numpy as np
 from typing import Any, Dict, Hashable, NewType, NamedTuple, Protocol, TypeVar
 
-IDX = NewType('IDX', int)
-IDXs = NewType('IDXs', np.ndarray)
-EID = NewType('EID', int)
-EIDs = NewType('EIDs', np.ndarray)
+StorageIdx = NewType('StorageIdx', int)
+StorageIdxs = NewType('StorageIdxs', np.ndarray)
+TransId = NewType('TransId', int)
+TransIds = NewType('TransIds', np.ndarray)
 XID = NewType('XID', int)
 XIDs = NewType('XIDs', np.ndarray)
 SIDX = NewType('SIDX', int)
@@ -36,7 +36,7 @@ class Timestep(NamedTuple):
     extra: Dict[Hashable, Any] | None = None
 
 class LaggedTimestep(NamedTuple):
-    eid: EID
+    trans_id: TransId
     xid: XID
     x: np.ndarray
     a: Any
@@ -53,22 +53,22 @@ class Batch(NamedTuple):
     r: np.ndarray
     gamma: np.ndarray
     terminal: np.ndarray
-    eid: EIDs
+    trans_id: TransIds
     xp: np.ndarray
 
 T = TypeVar('T', bound=Timestep)
 
 class Item(NamedTuple):
-    eid: EID
-    idx: IDX
+    trans_id: TransId
+    storage_idx: StorageIdx
     xid: XID
     n_xid: XID | None
     sidx: SIDX
     n_sidx: SIDX | None
 
 class Items(NamedTuple):
-    eids: EIDs
-    idxs: IDXs
+    trans_ids: TransIds
+    storage_idxs: StorageIdxs
     xids: XIDs
     n_xids: XIDs
     sidxs: SIDXs

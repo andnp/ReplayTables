@@ -1,6 +1,6 @@
 import numpy as np
 from typing import cast, Any, Dict, Hashable, Sequence, Tuple
-from ReplayTables.interface import Batch, Timestep, LaggedTimestep, EID, XID
+from ReplayTables.interface import Batch, Timestep, LaggedTimestep, XID, TransId
 from ReplayTables.ingress.LagBuffer import LagBuffer
 
 _zero = np.zeros(8)
@@ -28,20 +28,20 @@ def fake_batch(
     r: np.ndarray = _zero_b,
     xp: np.ndarray = _zero_b,
 ):
-    eids: Any = np.array([0], dtype=np.int64)
+    tids: Any = np.array([0], dtype=np.int64)
     return Batch(
         x=x,
         a=a,
         r=r,
         gamma=np.array([0.99]),
         terminal=np.array([False]),
-        eid=eids,
+        trans_id=tids,
         xp=xp
     )
 
 
 def fake_lagged_timestep(
-    eid: int,
+    trans_id: int,
     xid: int,
     n_xid: int,
     x: np.ndarray = _zero,
@@ -53,7 +53,7 @@ def fake_lagged_timestep(
     n_x: np.ndarray = _zero,
 ):
     return LaggedTimestep(
-        eid=cast(EID, eid),
+        trans_id=cast(TransId, trans_id),
         xid=cast(XID, xid),
         x=x,
         a=a,
@@ -84,7 +84,7 @@ def batch_equal(b1: Batch, b2: Batch):
     return obs_equal(b1.x, b2.x) \
         and obs_equal(b1.xp, b2.xp) \
         and np.all(b1.a == b2.a) \
-        and np.all(b1.eid == b2.eid) \
+        and np.all(b1.trans_id == b2.trans_id) \
         and np.all(b1.r == b2.r) \
         and np.all(b1.gamma == b2.gamma) \
         and np.all(b1.terminal == b2.terminal)
@@ -100,9 +100,9 @@ def lags_to_batch(lagged: Sequence[LaggedTimestep]) -> Batch:
         else:
             xps.append(lag.n_x)
 
-    eids: Any = np.array([lag.eid for lag in lagged])
+    tids: Any = np.array([lag.trans_id for lag in lagged])
     return Batch(
-        eid=eids,
+        trans_id=tids,
         x=np.stack([d.x for d in lagged], axis=0),
         a=np.array([d.a for d in lagged]),
         r=np.array([d.r for d in lagged]),
