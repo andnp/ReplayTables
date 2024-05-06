@@ -1,7 +1,7 @@
 import numpy as np
 from typing import Any
 from abc import abstractmethod
-from ReplayTables.interface import EID, IDX, EIDs, IDXs
+from ReplayTables.interface import LaggedTimestep, EID, IDX, EIDs, IDXs
 
 class IndexMapper:
     def __init__(self, max_size: int):
@@ -13,7 +13,7 @@ class IndexMapper:
         return self._size
 
     @abstractmethod
-    def add_eid(self, eid: EID, /, **kwargs: Any) -> IDX | None: ...
+    def add_transition(self, transition: LaggedTimestep, /, **kwargs: Any) -> IDX | None: ...
 
     @abstractmethod
     def eid2idx(self, eid: EID) -> IDX: ...

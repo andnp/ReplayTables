@@ -40,7 +40,7 @@ class ReplayBufferInterface:
     def add(self, transition: LaggedTimestep):
         if not self._built: self._deferred_init()
 
-        idx = self._idx_mapper.add_eid(transition.eid)
+        idx = self._idx_mapper.add_transition(transition)
 
         # if the mapper does not assign an IDX
         # then don't store the transition
