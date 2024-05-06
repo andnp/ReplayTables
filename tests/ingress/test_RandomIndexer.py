@@ -19,7 +19,7 @@ def test_random_indexer():
         eid = cast(Any, eid)
         idx = mapper.add_eid(eid)
         assert idx == control_eid2idx[eid]
-    
+
     assert mapper.size == buffer_size
     assert mapper._eid2idx == control_eid2idx
     assert mapper._idx2eid == control_idx2eid
@@ -41,5 +41,3 @@ def test_random_indexer():
     assert mapper.size == buffer_size
     assert mapper._eid2idx == control_eid2idx
     assert mapper._idx2eid == control_idx2eid
-
-

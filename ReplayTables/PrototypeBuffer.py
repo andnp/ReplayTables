@@ -19,4 +19,3 @@ class RandomEgressBuffer(ReplayBuffer):
     ):
         super().__init__(max_size, lag, rng, idx_mapper=idx_mapper, storage=storage, sampler=sampler)
         self._idx_mapper: IndexMapper = RandomIndexer(max_size, rng=self._rng)
-        

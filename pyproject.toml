@@ -10,7 +10,8 @@ features = ["pyo3/extension-module"]
 module-name = "ReplayTables.rust"
 
 [tool.ruff.lint]
-ignore = ['E701']
+select = ['F', 'E', 'W']
+ignore = ['E501', 'E701']
 
 [project]
 name = "ReplayTables-andnp"

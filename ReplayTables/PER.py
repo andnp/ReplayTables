@@ -38,14 +38,17 @@ class PrioritizedReplay(ReplayBuffer):
     def _on_add(self, item: Item, transition: LaggedTimestep):
         if transition.extra is not None and 'priority' in transition.extra:
             priority = transition.extra['priority']
+
         elif self._c.new_priority_mode == 'max':
             priority = self._max_priority
+
         elif self._c.new_priority_mode == 'mean':
             assert isinstance(self._sampler, PrioritySampler)
             total_priority = self._sampler.total_priority()
             priority = total_priority / self.size()
             if priority == 0:
                 priority = 1e-16
+
         else:
             raise NotImplementedError()
 
