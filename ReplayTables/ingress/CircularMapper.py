@@ -1,7 +1,7 @@
 import numpy as np
 from typing import Any
 from ReplayTables.ingress.IndexMapper import IndexMapper
-from ReplayTables.interface import EID, IDX, EIDs, IDXs
+from ReplayTables.interface import EID, IDX, EIDs, IDXs, LaggedTimestep
 
 class CircularMapper(IndexMapper):
     def __init__(self, max_size: int):
@@ -17,8 +17,10 @@ class CircularMapper(IndexMapper):
         idxs: Any = eids % self._max_size
         return idxs.astype(np.int64)
 
-    def add_eid(self, eid: EID, /, **kwargs: Any) -> IDX:
+    def add_transition(self, transition: LaggedTimestep, /, **kwargs: Any) -> IDX:
         self._size = min(self._size + 1, self._max_size)
+
+        eid = transition.eid
         self._max_eid = max(eid, self._max_eid)
         return self.eid2idx(eid)
 

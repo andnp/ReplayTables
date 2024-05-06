@@ -1,7 +1,7 @@
 import numpy as np
 from typing import Any, Dict
 from ReplayTables.ingress.IndexMapper import IndexMapper
-from ReplayTables.interface import EID, IDX, EIDs, IDXs
+from ReplayTables.interface import EID, IDX, EIDs, IDXs, LaggedTimestep
 from ReplayTables._utils.MinMaxHeap import MinMaxHeap
 
 class MinHeapMapper(IndexMapper):
@@ -20,7 +20,7 @@ class MinHeapMapper(IndexMapper):
         f = np.vectorize(self.eid2idx, otypes=[np.int64])
         return f(eids)
 
-    def add_eid(self, eid: EID, /, **kwargs: Any) -> IDX:
+    def add_transition(self, transition: LaggedTimestep, /, **kwargs: Any) -> IDX:
         # check if priority is given, else assume max
         if 'priority' in kwargs:
             p = kwargs['priority']
@@ -41,6 +41,7 @@ class MinHeapMapper(IndexMapper):
         else:
             self._heap.add(p, idx)
 
+        eid = transition.eid
         self._eid2idx[eid] = idx
         self._idx2eid[idx] = eid
 

@@ -1,7 +1,7 @@
 import numpy as np
 from typing import Any
 from ReplayTables.ingress.IndexMapper import IndexMapper
-from ReplayTables.interface import EID, IDX, EIDs, IDXs
+from ReplayTables.interface import EID, IDX, EIDs, IDXs, LaggedTimestep
 
 class RandomIndexer(IndexMapper):
     def __init__(self, max_size: int, rng: np.random.Generator):
@@ -17,8 +17,10 @@ class RandomIndexer(IndexMapper):
         idxs: Any = np.array([self._eid2idx[eid] for eid in eids]).astype(np.int64)
         return idxs
 
-    def add_eid(self, eid: EID, /, **kwargs: Any) -> IDX:
-        # if enough room in buffer add eid
+    def add_transition(self, transition: LaggedTimestep, /, **kwargs: Any) -> IDX:
+        eid = transition.eid
+
+        # if enough room in buffer add transition
         if self._size < self._max_size:
             idx: Any = self._size
             self._idx2eid[idx] = eid

@@ -24,7 +24,7 @@ def test_pser_dist():
     for _ in range(10):
         d = data.next_single()
 
-        idx = mapper.add_eid(d.eid)
+        idx = mapper.add_transition(d)
         storage.add(idx, d)
 
     tree = dist.tree

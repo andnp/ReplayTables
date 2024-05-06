@@ -1,6 +1,6 @@
-from typing import Any, cast
 import numpy as np
 
+from tests._utils.fake_data import fake_lagged_timestep
 from ReplayTables.ingress.RandomIndexer import RandomIndexer
 
 def test_random_indexer():
@@ -16,8 +16,8 @@ def test_random_indexer():
     control_idx2eid = {0: 0, 1: 1, 2: 2, 3: 3, 4: 4}
 
     for eid in control_eids:
-        eid = cast(Any, eid)
-        idx = mapper.add_eid(eid)
+        e = fake_lagged_timestep(eid=eid, xid=2 * eid, n_xid=2 * eid + 1)
+        idx = mapper.add_transition(e)
         assert idx == control_eid2idx[eid]
 
     assert mapper.size == buffer_size
@@ -26,8 +26,8 @@ def test_random_indexer():
 
     # add 100 more eids to the buffer
     for eid in range(5, 105):
-        eid = cast(Any, eid)
-        idx = mapper.add_eid(eid)
+        e = fake_lagged_timestep(eid=eid, xid=2 * eid, n_xid=2 * eid + 1)
+        idx = mapper.add_transition(e)
         control_idx = test_rng.integers(0, buffer_size)
 
         assert idx == control_idx
