@@ -34,14 +34,12 @@ class TestRandomEgressBuffer:
         assert np.all(samples.eid == 0)
         assert np.all(weights == 1.0)
 
-
         # should be able to add a few more points
         for i in range(4):
             x = i + 3
             buffer.add_step(fake_timestep(a=x))
 
         assert buffer.size() == 5
-
 
         # should remove random elements when over max size
         control_as = np.array([1, 2, 3, 4, 5])
@@ -74,9 +72,3 @@ class TestRandomEgressBuffer:
         unique = np.unique(samples.a)
         unique.sort()
         assert np.all(unique == np.array([1, 2, 3, 4, 5]))
-
-
-
-
-
-       

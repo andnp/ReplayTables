@@ -25,7 +25,7 @@ class RandomIndexer(IndexMapper):
             self._eid2idx[eid] = idx
             self._size += 1
             return idx
-        
+
         # if buffer full replace an existing random sample
         idx = self.rng.integers(0, self._max_size)
 
@@ -38,4 +38,3 @@ class RandomIndexer(IndexMapper):
 
     def has_eids(self, eids: EIDs):
         return np.array([eid in self._eid2idx for eid in eids])
-    
