@@ -13,6 +13,14 @@ module-name = "ReplayTables.rust"
 select = ['F', 'E', 'W']
 ignore = ['E501', 'E701']
 
+[tool.pyright]
+include = ["ReplayTables", "tests"]
+stubPath = "./typings"
+venvPath = "."
+venv = ".venv"
+typeCheckingMode = "standard"
+useLibraryCodeForTypes = true
+
 [project]
 name = "ReplayTables-andnp"
 version = "6.3.1"
