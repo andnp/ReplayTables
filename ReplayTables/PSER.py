@@ -27,7 +27,7 @@ class PrioritizedSequenceReplay(ReplayBuffer):
         super().__init__(max_size, lag, rng, idx_mapper=idx_mapper, storage=storage)
 
         self._c = config or PSERConfig()
-        self._sampler: PrioritySequenceSampler = PrioritySequenceSampler(
+        self._sampler = PrioritySequenceSampler(
             self._rng,
             self._storage.max_size,
             self._c.uniform_probability,
@@ -44,6 +44,7 @@ class PrioritizedSequenceReplay(ReplayBuffer):
         elif self._c.new_priority_mode == 'max':
             priority = self._max_priority
         elif self._c.new_priority_mode == 'mean':
+            assert isinstance(self._sampler, PrioritySequenceSampler)
             total_priority = self._sampler.total_priority()
             priority = total_priority / self.size()
             if priority == 0:
@@ -70,4 +71,6 @@ class PrioritizedSequenceReplay(ReplayBuffer):
 
     def delete_sample(self, eid: EID):
         idx = self._idx_mapper.eid2idx(eid)
+
+        assert isinstance(self._sampler, PrioritySequenceSampler)
         self._sampler.mask_sample(idx)

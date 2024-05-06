@@ -5,9 +5,6 @@ version = "6.3.1"
 tag_format = "$version"
 version_files = ["pyproject.toml"]
 
-[tool.mypy]
-mypy_path = "typings"
-
 [tool.maturin]
 features = ["pyo3/extension-module"]
 module-name = "ReplayTables.rust"
@@ -41,8 +38,8 @@ classifiers = [
 [project.optional-dependencies]
 dev = [
     "pip",
-    "mypy",
     "ruff",
+    "pyright",
     "commitizen",
     "pre-commit",
     "pytest>=7.3,<9.0",

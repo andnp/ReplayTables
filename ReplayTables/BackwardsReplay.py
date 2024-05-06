@@ -14,7 +14,7 @@ class BackwardsReplay(ReplayBuffer):
         super().__init__(max_size, lag, rng)
 
         self._c = config or BackwardsReplayConfig()
-        self._sampler: BackwardsSampler = BackwardsSampler(
+        self._sampler = BackwardsSampler(
             rng=rng,
             max_size=self._storage.max_size,
             reset_probability=self._c.reset_probability,

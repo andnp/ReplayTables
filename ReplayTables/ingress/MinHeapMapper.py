@@ -35,7 +35,7 @@ class MinHeapMapper(IndexMapper):
             _, idx = self._heap.min()
             self._heap.update(p, idx)
 
-            last_eid = self._idx2eid[idx]
+            last_eid: Any = self._idx2eid[idx]
             del self._eid2idx[last_eid]
 
         else:
