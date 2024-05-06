@@ -6,7 +6,7 @@ from typing import Any, Sequence, Type
 from ReplayTables.storage.BasicStorage import Storage, BasicStorage
 from ReplayTables.storage.CompressedStorage import CompressedStorage
 from ReplayTables.storage.NonArrayStorage import NonArrayStorage
-from ReplayTables.interface import LaggedTimestep, IDX, IDXs
+from ReplayTables.interface import LaggedTimestep, StorageIdx, StorageIdxs
 
 from tests._utils.fake_data import fake_lagged_timestep, LaggedDataStream, lagged_equal, batch_equal, lags_to_batch
 
@@ -27,12 +27,12 @@ def test_add1(Store: Type[Storage]):
     storage = Store(10)
     storage.add(
         as_idx(0),
-        fake_lagged_timestep(eid=32, xid=32, n_xid=34),
+        fake_lagged_timestep(trans_id=32, xid=32, n_xid=34),
     )
 
     storage.add(
         as_idx(1),
-        fake_lagged_timestep(eid=34, xid=34, n_xid=36),
+        fake_lagged_timestep(trans_id=34, xid=34, n_xid=36),
     )
 
     assert len(storage) == 2
@@ -40,7 +40,7 @@ def test_add1(Store: Type[Storage]):
     for i in range(10):
         storage.add(
             as_idx(i),
-            fake_lagged_timestep(eid=36 + i, xid=i, n_xid=i),
+            fake_lagged_timestep(trans_id=36 + i, xid=i, n_xid=i),
         )
 
     assert len(storage) == 10
@@ -55,18 +55,18 @@ def test_integration1(Store: Type[Storage]):
     def add_and_check(exp: LaggedTimestep, expected_len: int):
         past.append(exp)
         storage.add(
-            as_idx(exp.eid % 10),
+            as_idx(exp.trans_id % 10),
             exp,
         )
         assert len(storage) == expected_len
 
         got = storage.get_item(
-            as_idx(exp.eid % 10),
+            as_idx(exp.trans_id % 10),
         )
         assert lagged_equal(got, exp)
 
         for past_exp in past:
-            got = storage.get_item(as_idx(past_exp.eid % 10))
+            got = storage.get_item(as_idx(past_exp.trans_id % 10))
             assert lagged_equal(got, past_exp)
 
     # can maintain partial storage
@@ -129,7 +129,7 @@ def test_integration2(Store: Type[Storage]):
     samples = []
     for _ in range(10):
         d = data.next_single()
-        storage.add(as_idx(d.eid % 10), d)
+        storage.add(as_idx(d.trans_id % 10), d)
         samples.append(d)
 
     assert len(storage) == 10
@@ -143,17 +143,17 @@ def test_integration2(Store: Type[Storage]):
     samples = []
     exps = data.next(soft_term=True)
     samples.append(exps[0])
-    storage.add(as_idx(exps[0].eid % 10), exps[0])
+    storage.add(as_idx(exps[0].trans_id % 10), exps[0])
 
     data.next()
 
     for _ in range(5):
         d = data.next_single()
         samples.append(d)
-        storage.add(as_idx(d.eid % 10), d)
+        storage.add(as_idx(d.trans_id % 10), d)
 
     expected = lags_to_batch(samples)
-    eids: Any = expected.eid
+    eids: Any = expected.trans_id
     got = storage.get(as_idxs(eids % 10))
 
     assert batch_equal(got, expected)
@@ -165,17 +165,17 @@ def test_integration2(Store: Type[Storage]):
     samples = []
     exps = data.next(hard_term=True)
     samples.append(exps[0])
-    storage.add(as_idx(exps[0].eid % 10), exps[0])
+    storage.add(as_idx(exps[0].trans_id % 10), exps[0])
 
     data.next()
 
     for _ in range(5):
         d = data.next_single()
         samples.append(d)
-        storage.add(as_idx(d.eid % 10), d)
+        storage.add(as_idx(d.trans_id % 10), d)
 
     expected = lags_to_batch(samples)
-    eids: Any = expected.eid
+    eids: Any = expected.trans_id
     got = storage.get(as_idxs(eids % 10))
 
     assert batch_equal(got, expected)
@@ -194,7 +194,7 @@ def test_small_data(benchmark, Store: Type[Storage]):
     def add_and_get(storage: Storage, timesteps, eids):
         for i in range(100):
             storage.add(
-                as_idx(timesteps[i].eid % 10_000),
+                as_idx(timesteps[i].trans_id % 10_000),
                 timesteps[i],
             )
 
@@ -204,7 +204,7 @@ def test_small_data(benchmark, Store: Type[Storage]):
     storage = Store(10_000)
     eids = np.arange(32, dtype=np.int64)
     data = [
-        fake_lagged_timestep(eid=i, xid=2 * i, n_xid=2 * i + 1, x=np.ones(10), n_x=np.ones(10))
+        fake_lagged_timestep(trans_id=i, xid=2 * i, n_xid=2 * i + 1, x=np.ones(10), n_x=np.ones(10))
         for i in range(100)
     ]
 
@@ -219,7 +219,7 @@ def test_big_data(benchmark, Store: Type[Storage]):
     def add_and_get(storage: Storage, timesteps, eids):
         for i in range(100):
             storage.add(
-                as_idx(timesteps[i].eid % 10_000),
+                as_idx(timesteps[i].trans_id % 10_000),
                 timesteps[i],
             )
 
@@ -230,7 +230,7 @@ def test_big_data(benchmark, Store: Type[Storage]):
     eids = np.arange(32, dtype=np.int64)
     x = np.ones((64, 64, 3), dtype=np.uint8)
     data = [
-        fake_lagged_timestep(eid=i, xid=2 * i, n_xid=2 * i + 1, x=x, n_x=x)
+        fake_lagged_timestep(trans_id=i, xid=2 * i, n_xid=2 * i + 1, x=x, n_x=x)
         for i in range(100)
     ]
 
@@ -241,11 +241,11 @@ def test_big_data(benchmark, Store: Type[Storage]):
 # -- Internal Utils --
 # --------------------
 
-def as_idx(i: int) -> IDX:
+def as_idx(i: int) -> StorageIdx:
     idx: Any = i
     return idx
 
 
-def as_idxs(i: Sequence[int] | np.ndarray) -> IDXs:
+def as_idxs(i: Sequence[int] | np.ndarray) -> StorageIdxs:
     idxs: Any = np.asarray(i, dtype=np.int64)
     return idxs

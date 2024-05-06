@@ -1,7 +1,7 @@
 import numpy as np
 
 from typing import Any
-from ReplayTables.interface import Batch, IDXs, Item, LaggedTimestep, Timestep
+from ReplayTables.interface import Batch, Item, LaggedTimestep, StorageIdxs, Timestep
 from ReplayTables.ReplayBuffer import ReplayBufferInterface
 from ReplayTables.ingress.LagBuffer import LagBuffer
 
@@ -24,7 +24,7 @@ class SuperSimpleBuffer:
             r=e.r,
             gamma=e.gamma,
             terminal=e.terminal,
-            eid=e.eid,
+            trans_id=e.trans_id,
             xp=e.n_x,
         )
         self._i = (self._i + 1) % self._max
@@ -32,7 +32,7 @@ class SuperSimpleBuffer:
     def size(self):
         return len(self.storage)
 
-    def get(self, idxs: IDXs) -> Batch:
+    def get(self, idxs: StorageIdxs) -> Batch:
         x, a, r, g, t, e, xp = zip(*[self.storage[idx] for idx in idxs])
 
         xps = []
@@ -49,13 +49,13 @@ class SuperSimpleBuffer:
             r=np.array(r),
             gamma=np.array(g),
             terminal=np.array(t),
-            eid=eid,
+            trans_id=eid,
             xp=np.array(xps),
         )
 
 class ReplayBuffer(ReplayBufferInterface):
     def _on_add(self, item: Item, transition: LaggedTimestep):
-        self._sampler.replace(item.idx, transition)
+        self._sampler.replace(item.storage_idx, transition)
 
 # -----------
 # -- Tests --

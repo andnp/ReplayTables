@@ -1,7 +1,7 @@
 import numpy as np
 from dataclasses import dataclass
 from typing import Any
-from ReplayTables.interface import EID, LaggedTimestep, Batch, Item
+from ReplayTables.interface import LaggedTimestep, Batch, Item, TransId
 from ReplayTables.ReplayBuffer import ReplayBuffer
 from ReplayTables.sampling.PrioritySampler import PrioritySampler
 from ReplayTables.ingress.IndexMapper import IndexMapper
@@ -52,14 +52,14 @@ class PrioritizedReplay(ReplayBuffer):
         else:
             raise NotImplementedError()
 
-        self._sampler.replace(item.idx, transition, priority=priority)
+        self._sampler.replace(item.storage_idx, transition, priority=priority)
 
     def update_batch(self, batch: Batch, **kwargs: Any):
         priorities = kwargs['priorities']
         return self.update_priorities(batch, priorities)
 
     def update_priorities(self, batch: Batch, priorities: np.ndarray):
-        idxs = self._idx_mapper.eids2idxs(batch.eid)
+        idxs = self._idx_mapper.eids2idxs(batch.trans_id)
 
         priorities = np.abs(priorities) ** self._c.priority_exponent
         self._sampler.update(idxs, batch, priorities=priorities)
@@ -69,8 +69,8 @@ class PrioritizedReplay(ReplayBuffer):
             priorities.max(),
         )
 
-    def delete_sample(self, eid: EID):
-        idx = self._idx_mapper.eid2idx(eid)
+    def delete_sample(self, tid: TransId):
+        storage_idx = self._idx_mapper.eid2idx(tid)
 
         assert isinstance(self._sampler, PrioritySampler)
-        self._sampler.mask_sample(idx)
+        self._sampler.mask_sample(storage_idx)

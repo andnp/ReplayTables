@@ -1,7 +1,7 @@
 import numpy as np
 from ReplayTables._utils.jit import try2jit
 from typing import Any, Dict, List, Tuple
-from ReplayTables.interface import Timestep, LaggedTimestep, EID, XID
+from ReplayTables.interface import Timestep, LaggedTimestep, XID, TransId
 
 class LagBuffer:
     def __init__(self, lag: int):
@@ -10,7 +10,7 @@ class LagBuffer:
 
         self._idx = 0
         self._xid: Any = 0
-        self._eid: Any = 0
+        self._tid: Any = 0
 
         self._buffer: Dict[int, Tuple[XID | None, Timestep]] = {}
         self._r = np.zeros(self._max_len, dtype=np.float_)
@@ -38,7 +38,7 @@ class LagBuffer:
         assert f.x is not None
         assert f_xid is not None
         out.append(LaggedTimestep(
-            eid=self._next_eid(),
+            trans_id=self._next_tid(),
             xid=f_xid,
             x=f.x,
             a=f.a,
@@ -61,7 +61,7 @@ class LagBuffer:
             assert f.x is not None
             assert f_xid is not None
             out.append(LaggedTimestep(
-                eid=self._next_eid(),
+                trans_id=self._next_tid(),
                 xid=f_xid,
                 x=f.x,
                 a=f.a,
@@ -90,10 +90,10 @@ class LagBuffer:
         self._r = np.zeros(self._max_len, dtype=np.float_)
         self._g = np.zeros(self._max_len, dtype=np.float_)
 
-    def _next_eid(self) -> EID:
-        eid = self._eid
-        self._eid += 1
-        return eid
+    def _next_tid(self) -> TransId:
+        tid = self._tid
+        self._tid += 1
+        return tid
 
     def _next_xid(self) -> XID:
         xid = self._xid

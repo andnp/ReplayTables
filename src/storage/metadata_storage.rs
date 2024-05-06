@@ -8,9 +8,9 @@ use serde::{Deserialize, Serialize};
 #[derive(Serialize, Deserialize, Clone, Copy)]
 pub struct Item {
     #[pyo3(get)]
-    pub eid: i64,
+    pub trans_id: i64,
     #[pyo3(get)]
-    pub idx: usize,
+    pub storage_idx: usize,
     #[pyo3(get)]
     pub xid: i64,
     #[pyo3(get)]
@@ -26,8 +26,8 @@ impl Item {
     #[staticmethod]
     pub fn default(null_idx: i64) -> Self {
         Item {
-            eid: null_idx,
-            idx: 0,
+            trans_id: null_idx,
+            storage_idx: 0,
             xid: 0,
             n_xid: None,
             sidx: 0,
@@ -39,9 +39,9 @@ impl Item {
 #[pyclass(module = "rust")]
 pub struct Items {
     #[pyo3(get)]
-    pub idxs: Py<PyArray1<i64>>,
+    pub storage_idxs: Py<PyArray1<i64>>,
     #[pyo3(get)]
-    pub eids: Py<PyArray1<i64>>,
+    pub trans_ids: Py<PyArray1<i64>>,
     #[pyo3(get)]
     pub xids: Py<PyArray1<i64>>,
     #[pyo3(get)]
@@ -107,7 +107,7 @@ impl MetadataStorage {
         let idxs = idxs.as_array();
         let size = idxs.len();
 
-        let mut eids = vec![0; size];
+        let mut trans_ids = vec![0; size];
         let mut xids = vec![0; size];
         let mut n_xids = vec![0; size];
         let mut sidxs = vec![0; size];
@@ -117,7 +117,7 @@ impl MetadataStorage {
         for i in 0..size {
             let idx = *idxs.get(i).expect("");
             let item = self._ids.get(idx as usize).expect("");
-            eids[i] = item.eid;
+            trans_ids[i] = item.trans_id;
             xids[i] = item.xid;
             sidxs[i] = item.sidx;
 
@@ -127,8 +127,8 @@ impl MetadataStorage {
 
         Python::with_gil(|py| {
             Items {
-                idxs: idxs.to_pyarray_bound(py).into(),
-                eids: eids.to_pyarray_bound(py).into(),
+                storage_idxs: idxs.to_pyarray_bound(py).into(),
+                trans_ids: trans_ids.to_pyarray_bound(py).into(),
                 xids: xids.to_pyarray_bound(py).into(),
                 sidxs: sidxs.to_pyarray_bound(py).into(),
                 n_xids: n_xids.to_pyarray_bound(py).into(),
@@ -139,7 +139,7 @@ impl MetadataStorage {
 
     pub fn add_item(
         &mut self,
-        eid: i64,
+        trans_id: i64,
         idx: i64,
         xid: i64,
         n_xid: Option<i64>,
@@ -147,25 +147,25 @@ impl MetadataStorage {
         // first check if there was already an item
         let item = &self._ids[idx as usize];
         let mut last_item = None;
-        if item.eid != self._null_idx {
-            self._ref.remove_transition(item.eid);
+        if item.trans_id != self._null_idx {
+            self._ref.remove_transition(item.trans_id);
             last_item = Some(item.clone());
         }
 
         let sidx = self._ref
-            .add_state(eid, xid)
+            .add_state(trans_id, xid)
             .expect("");
 
         let mut n_sidx = None;
         if n_xid.is_some() {
             n_sidx = self._ref
-                .add_state(eid, n_xid.expect(""))
+                .add_state(trans_id, n_xid.expect(""))
                 .ok();
         }
 
         let item = Item {
-            idx: idx as usize,
-            eid,
+            storage_idx: idx as usize,
+            trans_id,
             xid,
             sidx,
             n_xid,
