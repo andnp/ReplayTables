@@ -41,6 +41,12 @@ class ReplayBufferInterface:
         if not self._built: self._deferred_init()
 
         idx = self._idx_mapper.add_eid(transition.eid)
+
+        # if the mapper does not assign an IDX
+        # then don't store the transition
+        if idx is None:
+            return
+
         item = self._storage.add(idx, transition)
         self._on_add(item, transition)
 
