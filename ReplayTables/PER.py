@@ -27,7 +27,7 @@ class PrioritizedReplay(ReplayBuffer):
         super().__init__(max_size, lag, rng, idx_mapper=idx_mapper, storage=storage)
 
         self._c = config or PERConfig()
-        self._sampler: PrioritySampler = PrioritySampler(
+        self._sampler = PrioritySampler(
             rng=self._rng,
             max_size=self._storage.max_size,
             uniform_probability=self._c.uniform_probability,
@@ -41,6 +41,7 @@ class PrioritizedReplay(ReplayBuffer):
         elif self._c.new_priority_mode == 'max':
             priority = self._max_priority
         elif self._c.new_priority_mode == 'mean':
+            assert isinstance(self._sampler, PrioritySampler)
             total_priority = self._sampler.total_priority()
             priority = total_priority / self.size()
             if priority == 0:
@@ -67,4 +68,6 @@ class PrioritizedReplay(ReplayBuffer):
 
     def delete_sample(self, eid: EID):
         idx = self._idx_mapper.eid2idx(eid)
+
+        assert isinstance(self._sampler, PrioritySampler)
         self._sampler.mask_sample(idx)

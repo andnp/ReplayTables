@@ -1,3 +1,4 @@
+from typing import Any
 import numpy as np
 
 from ReplayTables.PrototypeBuffer import RandomEgressBuffer
@@ -15,7 +16,6 @@ class TestRandomEgressBuffer:
         indexer_rng = np.random.default_rng(seed)
 
         buffer = RandomEgressBuffer(max_size, lag, sampler_rng)
-        buffer._idx_mapper._rng = indexer_rng
 
         assert buffer.size() == 0
 
@@ -51,8 +51,8 @@ class TestRandomEgressBuffer:
             swap_idx = indexer_rng.integers(0, 5)
             control_as[swap_idx] = x - 1
 
-        assert np.all(buffer._storage.get(np.array([0, 1, 2 , 3, 4])).a == control_as)
-
+        idxs: Any = np.array([0, 1, 2, 3, 4])
+        assert np.all(buffer._storage.get(idxs).a == control_as)
 
     def test_sampling(self):
         max_size = 5
@@ -60,11 +60,8 @@ class TestRandomEgressBuffer:
         seed = 0
 
         sampler_rng = np.random.default_rng(seed)
-        indexer_rng = np.random.default_rng(seed)
 
         buffer = RandomEgressBuffer(max_size, lag, sampler_rng)
-        buffer._idx_mapper._rng = indexer_rng
-
 
         # should be able to sample all data points
         for i in range(6):

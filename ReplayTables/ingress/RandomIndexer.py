@@ -14,12 +14,13 @@ class RandomIndexer(IndexMapper):
         return self._eid2idx.get(eid, None)
 
     def eids2idxs(self, eids: EIDs) -> IDXs:
-        return np.array([self._eid2idx[eid] for eid in eids]).astype(np.int64)
-    
+        idxs: Any = np.array([self._eid2idx[eid] for eid in eids]).astype(np.int64)
+        return idxs
+
     def add_eid(self, eid: EID, /, **kwargs: Any) -> IDX:
         # if enough room in buffer add eid
         if self._size < self._max_size:
-            idx = self._size
+            idx: Any = self._size
             self._idx2eid[idx] = eid
             self._eid2idx[eid] = idx
             self._size += 1
