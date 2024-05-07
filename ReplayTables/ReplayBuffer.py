@@ -83,12 +83,12 @@ class ReplayBufferInterface:
         return self._storage.get(idxs)
 
     def isr_weights(self, tids: TransIds) -> np.ndarray:
-        idxs = self._idx_mapper.eids2idxs(tids)
+        idxs = self._idx_mapper.get_storage_idxs(tids)
         weights = self._sampler.isr_weights(idxs)
         return weights
 
     def get(self, tids: TransIds):
-        idxs = self._idx_mapper.eids2idxs(tids)
+        idxs = self._idx_mapper.get_storage_idxs(tids)
         return self._storage.get(idxs)
 
     def next_eid(self) -> TransId:

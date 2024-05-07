@@ -10,10 +10,10 @@ class RandomIndexer(IndexMapper):
         self._idx2eid = {}
         self._eid2idx = {}
 
-    def eid2idx(self, tid: TransId) -> StorageIdx:
+    def get_storage_idx(self, tid: TransId) -> StorageIdx:
         return self._eid2idx.get(tid, None)
 
-    def eids2idxs(self, tids: TransIds) -> StorageIdxs:
+    def get_storage_idxs(self, tids: TransIds) -> StorageIdxs:
         idxs: Any = np.array([self._eid2idx[tid] for tid in tids]).astype(np.int64)
         return idxs
 
@@ -38,5 +38,5 @@ class RandomIndexer(IndexMapper):
         self._eid2idx[tid] = idx
         return idx
 
-    def has_eids(self, tids: TransIds):
+    def has_transitions(self, tids: TransIds):
         return np.array([tid in self._eid2idx for tid in tids])
