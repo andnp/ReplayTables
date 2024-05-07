@@ -2,7 +2,7 @@ import numpy as np
 from abc import abstractmethod
 from typing import Any
 from ReplayTables._utils.logger import logger
-from ReplayTables.interface import Timestep, LaggedTimestep, Batch, Item, TransId, TransIds
+from ReplayTables.interface import Timestep, LaggedTimestep, Batch, Item, TransIds
 from ReplayTables.ingress.IndexMapper import IndexMapper
 from ReplayTables.ingress.CircularMapper import CircularMapper
 from ReplayTables.ingress.LagBuffer import LagBuffer
@@ -90,16 +90,6 @@ class ReplayBufferInterface:
     def get(self, tids: TransIds):
         idxs = self._idx_mapper.get_storage_idxs(tids)
         return self._storage.get(idxs)
-
-    def next_eid(self) -> TransId:
-        eid: Any = self._t
-        self._t += 1
-        return eid
-
-    def last_eid(self) -> TransId:
-        assert self._t > 0, "No previous transition id!"
-        last: Any = self._t - 1
-        return last
 
     def use_storage(self, storage: Storage):
         assert self._max_size <= storage.max_size
