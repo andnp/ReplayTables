@@ -59,7 +59,7 @@ class PrioritizedReplay(ReplayBuffer):
         return self.update_priorities(batch, priorities)
 
     def update_priorities(self, batch: Batch, priorities: np.ndarray):
-        idxs = self._idx_mapper.eids2idxs(batch.trans_id)
+        idxs = self._idx_mapper.get_storage_idxs(batch.trans_id)
 
         priorities = np.abs(priorities) ** self._c.priority_exponent
         self._sampler.update(idxs, batch, priorities=priorities)
@@ -70,7 +70,7 @@ class PrioritizedReplay(ReplayBuffer):
         )
 
     def delete_sample(self, tid: TransId):
-        storage_idx = self._idx_mapper.eid2idx(tid)
+        storage_idx = self._idx_mapper.get_storage_idx(tid)
 
         assert isinstance(self._sampler, PrioritySampler)
         self._sampler.mask_sample(storage_idx)

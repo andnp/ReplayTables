@@ -53,13 +53,13 @@ class BackwardsSampler(IndexSampler):
         is_term = is_term.reshape((n, self._jump))
         is_term = np.any(is_term, axis=1)
 
-        is_valid = self._mapper.has_eids(tids)
+        is_valid = self._mapper.has_transitions(tids)
         should_reset = is_term | (1 - is_valid) | (self._rng.random(size=n) < self._reset)
 
         new_eids = (1 - should_reset) * tids + should_reset * reset_tids
         self._prior_tids = new_eids
 
-        return self._mapper.eids2idxs(new_eids)
+        return self._mapper.get_storage_idxs(new_eids)
 
     def stratified_sample(self, n: int) -> StorageIdxs:
         raise NotImplementedError()

@@ -106,8 +106,8 @@ class PrioritizedSequenceDistribution(PrioritizedDistribution):
     def update_seq(self, tids: TransIds, idxs: StorageIdxs, priorities: np.ndarray, terminal: Set[int]):
         b_eids: Any = back_sequence(tids, self._c.trace_depth)
 
-        b_idxs = self._mapper.eids2idxs(b_eids)
-        idx_mask = _term_sequence(b_idxs, terminal) | (~self._mapper.has_eids(b_eids))
+        b_idxs = self._mapper.get_storage_idxs(b_eids)
+        idx_mask = _term_sequence(b_idxs, terminal) | (~self._mapper.has_transitions(b_eids))
 
         u_idx, u_priorities = _get_priorities(
             self.tree,

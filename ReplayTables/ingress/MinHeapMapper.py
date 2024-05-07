@@ -12,12 +12,12 @@ class MinHeapMapper(IndexMapper):
         self._eid2idx: Dict[TransId, StorageIdx] = {}
         self._idx2eid = np.zeros(max_size, dtype=np.int64)
 
-    def eid2idx(self, tid: TransId) -> StorageIdx:
+    def get_storage_idx(self, tid: TransId) -> StorageIdx:
         default: Any = -1
         return self._eid2idx.get(tid, default)
 
-    def eids2idxs(self, tids: TransIds) -> StorageIdxs:
-        f = np.vectorize(self.eid2idx, otypes=[np.int64])
+    def get_storage_idxs(self, tids: TransIds) -> StorageIdxs:
+        f = np.vectorize(self.get_storage_idx, otypes=[np.int64])
         return f(tids)
 
     def add_transition(self, transition: LaggedTimestep, /, **kwargs: Any) -> StorageIdx:
@@ -48,13 +48,13 @@ class MinHeapMapper(IndexMapper):
         self._size = min(self._size + 1, self._max_size)
         return idx
 
-    def update_eid(self, tid: TransId, /, **kwargs: Any):
+    def update_transition(self, tid: TransId, /, **kwargs: Any):
         assert 'priority' in kwargs
         p = kwargs['priority']
 
         idx = self._eid2idx[tid]
         self._heap.update(p, idx)
 
-    def has_eids(self, tids: TransIds):
+    def has_transitions(self, tids: TransIds):
         f = np.vectorize(lambda e: e in self._eid2idx, otypes=[np.bool_])
         return f(tids)

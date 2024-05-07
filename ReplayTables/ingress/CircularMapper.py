@@ -9,11 +9,11 @@ class CircularMapper(IndexMapper):
 
         self._max_tid = 0
 
-    def eid2idx(self, tid: TransId) -> StorageIdx:
+    def get_storage_idx(self, tid: TransId) -> StorageIdx:
         idx: Any = tid % self._max_size
         return idx
 
-    def eids2idxs(self, tids: TransIds) -> StorageIdxs:
+    def get_storage_idxs(self, tids: TransIds) -> StorageIdxs:
         idxs: Any = tids % self._max_size
         return idxs.astype(np.int64)
 
@@ -22,8 +22,8 @@ class CircularMapper(IndexMapper):
 
         tid = transition.trans_id
         self._max_tid = max(tid, self._max_tid)
-        return self.eid2idx(tid)
+        return self.get_storage_idx(tid)
 
-    def has_eids(self, tids: TransIds):
+    def has_transitions(self, tids: TransIds):
         lower = self._max_tid - self._size
         return (tids <= self._max_tid) & (tids > lower)
