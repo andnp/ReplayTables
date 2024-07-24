@@ -5,7 +5,7 @@ def get_dtype(v: Any):
     if isinstance(v, int):
         return np.int32
     elif isinstance(v, float):
-        return np.float_
+        return np.float64
 
     v = np.asarray(v)
     return v.dtype

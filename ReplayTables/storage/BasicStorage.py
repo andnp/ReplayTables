@@ -13,9 +13,9 @@ class BasicStorage(Storage):
         self._built = False
 
         self._extras: Dict[StorageIdx, Any] = {}
-        self._r = np.ones(max_size, dtype=np.float_) * np.nan
+        self._r = np.ones(max_size, dtype=np.float64) * np.nan
         self._term = np.empty(max_size, dtype=np.bool_)
-        self._gamma = np.ones(max_size, dtype=np.float_) * np.nan
+        self._gamma = np.ones(max_size, dtype=np.float64) * np.nan
 
         # building dummy values here for type inference
         self._state_store: Any = np.empty(0)

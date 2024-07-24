@@ -13,8 +13,8 @@ class LagBuffer:
         self._tid: Any = 0
 
         self._buffer: Dict[int, Tuple[XID | None, Timestep]] = {}
-        self._r = np.zeros(self._max_len, dtype=np.float_)
-        self._g = np.zeros(self._max_len, dtype=np.float_)
+        self._r = np.zeros(self._max_len, dtype=np.float64)
+        self._g = np.zeros(self._max_len, dtype=np.float64)
 
     def add(self, experience: Timestep):
         self._idx = (self._idx + 1) % self._max_len
@@ -87,8 +87,8 @@ class LagBuffer:
     def flush(self):
         self._buffer = {}
         self._idx = 0
-        self._r = np.zeros(self._max_len, dtype=np.float_)
-        self._g = np.zeros(self._max_len, dtype=np.float_)
+        self._r = np.zeros(self._max_len, dtype=np.float64)
+        self._g = np.zeros(self._max_len, dtype=np.float64)
 
     def _next_tid(self) -> TransId:
         tid = self._tid
