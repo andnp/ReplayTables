@@ -28,7 +28,7 @@ class TestPER:
         weights = buffer.isr_weights(samples.trans_id)
         assert np.all(samples.a == 1)
         assert np.all(samples.trans_id == 0)
-        assert np.all(weights == 0.2)
+        assert np.allclose(weights, 0.2)
 
         # should be able to add a few more points
         for i in range(4):
