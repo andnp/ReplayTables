@@ -38,7 +38,7 @@ class UniformDistribution(Distribution):
         return npu.stratified_sample_integers(rng, n, self._size)
 
     def probs(self, idxs: npt.ArrayLike):
-        return np.full_like(idxs, fill_value=(1 / self._size), dtype=np.float_)
+        return np.full_like(idxs, fill_value=(1 / self._size), dtype=np.float32)
 
 
 class PrioritizedDistribution(Distribution):

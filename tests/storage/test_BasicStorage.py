@@ -27,7 +27,7 @@ def test_inferred_types1():
 
     assert storage._state_store.dtype == np.uint8
     assert storage._state_store.shape == (11, 32, 32)
-    assert storage._a.dtype == np.float_
+    assert storage._a.dtype == np.float64
 
 def test_inferred_types2():
     storage = BasicStorage(10)
