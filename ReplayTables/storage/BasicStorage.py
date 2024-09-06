@@ -1,8 +1,9 @@
+from math import gamma
 import numpy as np
 import ReplayTables._utils.np as npu
 
 from typing import Any, Dict
-from ReplayTables.interface import Batch, LaggedTimestep, SIDX, SIDXs, Item, StorageIdx, StorageIdxs
+from ReplayTables.interface import Batch, LaggedTimestep, SIDX, SIDXs, Item, StorageIdx, StorageIdxs, TimestepId, TimestepData
 from ReplayTables.storage.Storage import Storage
 
 
@@ -11,24 +12,17 @@ class BasicStorage(Storage):
         super().__init__(max_size)
 
         self._built = False
-
-        self._extras: Dict[StorageIdx, Any] = {}
-        self._r = np.ones(max_size, dtype=np.float64) * np.nan
-        self._term = np.empty(max_size, dtype=np.bool_)
-        self._gamma = np.ones(max_size, dtype=np.float64) * np.nan
+        self._store: Dict[TimestepId, TimestepData] = {}
+        self._extras: Dict[TimestepId, Any] = {}
 
         # building dummy values here for type inference
-        self._state_store: Any = np.empty(0)
-        self._a = np.zeros(0)
+        self._zero: Any = np.empty(0)
 
     def _deferred_init(self, transition: LaggedTimestep):
         self._built = True
 
         shape = transition.x.shape
-        self._state_store = np.empty((self._max_size + 1, ) + shape, dtype=transition.x.dtype)
-        self._a = np.empty(self._max_size, dtype=npu.get_dtype(transition.a))
-
-        self._state_store[-1] = 0
+        self._zero = np.empty(shape, dtype=transition.x.dtype)
 
     def add(self, idx: StorageIdx, transition: LaggedTimestep, /, **kwargs: Any):
         if not self._built: self._deferred_init(transition)
@@ -46,6 +40,15 @@ class BasicStorage(Storage):
             self.delete_item(last_item)
 
         # store easy things
+        self._store[idx] = TimestepData(
+            id=idx,
+            x=transition.x,
+            a=transition.a,
+            r=transition.r,
+            gamma=transition.gamma,
+            terminal=transition.terminal,
+        )
+
         self._r[idx] = transition.r
         self._a[idx] = transition.a
         self._term[idx] = transition.terminal

@@ -1,10 +1,16 @@
 import numpy as np
 from typing import Any, Dict, Hashable, NewType, NamedTuple, Protocol, TypeVar
 
-StorageIdx = NewType('StorageIdx', int)
-StorageIdxs = NewType('StorageIdxs', np.ndarray)
+# unique identifier for a timestep
+# monotonically increasing through the lifetime of an experiment
+TimestepId = NewType('TimestepId', int)
+
 TransId = NewType('TransId', int)
 TransIds = NewType('TransIds', np.ndarray)
+
+# TODO: deprecate these types
+StorageIdx = NewType('StorageIdx', int)
+StorageIdxs = NewType('StorageIdxs', np.ndarray)
 XID = NewType('XID', int)
 XIDs = NewType('XIDs', np.ndarray)
 SIDX = NewType('SIDX', int)
@@ -34,6 +40,14 @@ class Timestep(NamedTuple):
     gamma: Ring
     terminal: bool
     extra: Dict[Hashable, Any] | None = None
+
+class TimestepData(NamedTuple):
+    id: TimestepId
+    x: np.ndarray | None
+    a: Any
+    r: Ring | None
+    gamma: Ring
+    terminal: bool
 
 class LaggedTimestep(NamedTuple):
     trans_id: TransId
