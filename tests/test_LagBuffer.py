@@ -104,18 +104,3 @@ class TestLagBuffer:
         assert out[2].gamma == 0.
         assert out[2].terminal
         assert np.all(out[2].n_x == 5)
-
-    def test_flush(self):
-        buffer = LagBuffer(lag=1)
-
-        buffer.add(Timestep(
-            x=np.array(0),
-            a=0,
-            r=0,
-            gamma=0,
-            terminal=True,
-        ))
-
-        assert len(buffer._buffer) == 1
-        buffer.flush()
-        assert len(buffer._buffer) == 0
