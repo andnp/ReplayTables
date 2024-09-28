@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Any, Hashable, List, cast
+from typing import Any, Hashable, cast
 from ReplayTables.interface import Timestep, LaggedTimestep, XID, TransId
 
 
@@ -15,8 +15,9 @@ class BufferedTransition:
 
 
 class LagBuffer:
-    def __init__(self, lag: int):
+    def __init__(self, lag: int, multi_lag: bool = False):
         self._lag = lag
+        self._multi = multi_lag
         self._max_len = lag + 1
 
         self._idx = 0
@@ -25,7 +26,7 @@ class LagBuffer:
 
         self._buffer: list[BufferedTransition] = [BufferedTransition() for _ in range(self._max_len)]
 
-    def add(self, experience: Timestep):
+    def add(self, experience: Timestep) -> list[LaggedTimestep]:
         self._idx += 1
         idx = self._idx % self._max_len
 
@@ -40,19 +41,35 @@ class LagBuffer:
             d.r = 0.
             d.gamma = 1.
 
-        if experience.r is not None:
-            for i in range(self._lag):
-                j = (idx + i + 1) % self._max_len
-                d = self._buffer[j]
+        # if there is no reward, then this must be the first
+        # timestep of the episode
+        if experience.r is None:
+            return []
 
-                d.r += d.gamma * experience.r
-                d.gamma *= experience.gamma
+        # distribute reward and gamma across existing experiences
+        for i in range(self._lag):
+            j = (idx + i + 1) % self._max_len
+            d = self._buffer[j]
 
-        out: List[LaggedTimestep] = []
-        if self._idx <= self._lag:
-            return out
+            d.r += d.gamma * experience.r
+            d.gamma *= experience.gamma
 
-        f_idx = (idx - self._lag) % self._max_len
+        out = self._build_timesteps(experience, xid)
+
+        if experience.terminal:
+            self.flush()
+
+        return out
+
+    def _build_timesteps(self, experience: Timestep, xid: XID | None) -> list[LaggedTimestep]:
+        if self._idx <= self._lag and not self._multi:
+            return []
+
+        out = []
+
+        idx = self._idx % self._max_len
+        lag = min(self._lag, self._idx - 1)
+        f_idx = (idx - lag) % self._max_len
         f = self._buffer[f_idx]
 
         assert f.x is not None
@@ -70,10 +87,10 @@ class LagBuffer:
             n_x=experience.x,
         ))
 
-        if not experience.terminal:
+        if not experience.terminal and not self._multi:
             return out
 
-        for i in range(1, self._lag):
+        for i in range(1, lag):
             start = (f_idx + i) % self._max_len
             f = self._buffer[start]
 
@@ -92,7 +109,6 @@ class LagBuffer:
                 n_x=experience.x,
             ))
 
-        self.flush()
         return out
 
     def flush(self):
