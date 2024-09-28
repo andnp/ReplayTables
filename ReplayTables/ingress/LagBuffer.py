@@ -76,14 +76,6 @@ class LagBuffer:
         self.flush()
         return out
 
-    def add_action(self, a: Any):
-        idx = self._idx % self._max_len
-
-        xid, experience = self._buffer[idx]
-        experience = experience._replace(a=a)
-
-        self._buffer[idx] = (xid, experience)
-
     def flush(self):
         self._buffer = {}
         self._idx = 0
