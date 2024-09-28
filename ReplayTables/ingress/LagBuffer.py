@@ -1,7 +1,18 @@
-import numpy as np
-from ReplayTables._utils.jit import try2jit
-from typing import Any, Dict, List, Tuple
+from dataclasses import dataclass
+from typing import Any, Hashable, List, cast
 from ReplayTables.interface import Timestep, LaggedTimestep, XID, TransId
+
+
+@dataclass
+class BufferedTransition:
+    trans_id: TransId = cast(Any, 0)
+    xid: XID = cast(Any, 0)
+    x: Any = 0
+    a: Any = 0
+    extra: dict[Hashable, Any] | None = None
+    r: float = 0
+    gamma: float = 1
+
 
 class LagBuffer:
     def __init__(self, lag: int):
@@ -12,38 +23,47 @@ class LagBuffer:
         self._xid: Any = 0
         self._tid: Any = 0
 
-        self._buffer: Dict[int, Tuple[XID | None, Timestep]] = {}
-        self._r = np.zeros(self._max_len, dtype=np.float64)
-        self._g = np.zeros(self._max_len, dtype=np.float64)
+        self._buffer: list[BufferedTransition] = [BufferedTransition() for _ in range(self._max_len)]
 
     def add(self, experience: Timestep):
-        self._idx = (self._idx + 1) % self._max_len
+        self._idx += 1
         idx = self._idx % self._max_len
-        self._r[idx] = experience.r
-        self._g[idx] = experience.gamma
 
         xid = None
         if experience.x is not None:
             xid = self._next_xid()
+            d = self._buffer[idx]
+            d.xid = xid
+            d.x = experience.x
+            d.a = experience.a
+            d.extra = experience.extra
+            d.r = 0.
+            d.gamma = 1.
 
-        self._buffer[idx] = (xid, experience)
+        if experience.r is not None:
+            for i in range(self._lag):
+                j = (idx + i + 1) % self._max_len
+                d = self._buffer[j]
+
+                d.r += d.gamma * experience.r
+                d.gamma *= experience.gamma
+
         out: List[LaggedTimestep] = []
-        if len(self._buffer) <= self._lag:
+        if self._idx <= self._lag:
             return out
 
         f_idx = (idx - self._lag) % self._max_len
-        f_xid, f = self._buffer[f_idx]
-        r, g = _accumulate_return(self._r, self._g, f_idx, self._lag, self._max_len)
+        f = self._buffer[f_idx]
 
         assert f.x is not None
-        assert f_xid is not None
+        assert f.xid is not None
         out.append(LaggedTimestep(
             trans_id=self._next_tid(),
-            xid=f_xid,
+            xid=f.xid,
             x=f.x,
             a=f.a,
-            r=r,
-            gamma=g,
+            r=f.r,
+            gamma=f.gamma,
             extra=f.extra or {},
             terminal=experience.terminal,
             n_xid=xid,
@@ -55,18 +75,17 @@ class LagBuffer:
 
         for i in range(1, self._lag):
             start = (f_idx + i) % self._max_len
-            f_xid, f = self._buffer[start]
-            r, g = _accumulate_return(self._r, self._g, start, self._lag - i, self._max_len)
+            f = self._buffer[start]
 
             assert f.x is not None
-            assert f_xid is not None
+            assert f.xid is not None
             out.append(LaggedTimestep(
                 trans_id=self._next_tid(),
-                xid=f_xid,
+                xid=f.xid,
                 x=f.x,
                 a=f.a,
-                r=r,
-                gamma=g,
+                r=f.r,
+                gamma=f.gamma,
                 extra=f.extra or {},
                 terminal=experience.terminal,
                 n_xid=xid,
@@ -77,10 +96,8 @@ class LagBuffer:
         return out
 
     def flush(self):
-        self._buffer = {}
+        self._buffer = [BufferedTransition() for _ in range(self._max_len)]
         self._idx = 0
-        self._r = np.zeros(self._max_len, dtype=np.float64)
-        self._g = np.zeros(self._max_len, dtype=np.float64)
 
     def _next_tid(self) -> TransId:
         tid = self._tid
@@ -91,16 +108,3 @@ class LagBuffer:
         xid = self._xid
         self._xid += 1
         return xid
-
-
-@try2jit()
-def _accumulate_return(rs: np.ndarray, gs: np.ndarray, start: int, steps: int, max_len: int):
-    g = 1.
-    r = 0.
-    for i in range(steps):
-        idx = (start + i + 1) % max_len
-        assert not np.isnan(rs[idx])
-        r += rs[idx] * g
-        g *= gs[idx]
-
-    return r, g
