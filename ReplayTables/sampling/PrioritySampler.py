@@ -1,6 +1,10 @@
 import numpy as np
 from typing import Any
-from ReplayTables.Distributions import MixinUniformDistribution, SubDistribution, PrioritizedDistribution, MixtureDistribution
+
+from discrete_dists.mixture import MixtureDistribution, SubDistribution
+from discrete_dists.proportional import Proportional
+from discrete_dists.uniform import Uniform
+
 from ReplayTables.interface import LaggedTimestep, Batch, StorageIdx, StorageIdxs
 from ReplayTables.sampling.IndexSampler import IndexSampler
 
@@ -13,11 +17,11 @@ class PrioritySampler(IndexSampler):
     ) -> None:
         super().__init__(rng, max_size)
 
-        self._target.update(self._max_size)
+        self._target.update_support(self._max_size)
 
-        self._uniform = MixinUniformDistribution()
-        self._p_dist = PrioritizedDistribution()
-        self._dist = MixtureDistribution(self._max_size, dists=[
+        self._uniform = Uniform(0)
+        self._p_dist = Proportional(self._max_size)
+        self._dist = MixtureDistribution([
             SubDistribution(d=self._p_dist, p=1 - uniform_probability),
             SubDistribution(d=self._uniform, p=uniform_probability)
         ])
@@ -51,7 +55,6 @@ class PrioritySampler(IndexSampler):
         zero = np.zeros(1)
 
         self._p_dist.update(idxs, zero)
-        self._uniform.set(idxs, zero)
 
     def total_priority(self):
-        return self._p_dist.tree.dim_total(self._p_dist.dim)
+        return self._p_dist.tree.total()

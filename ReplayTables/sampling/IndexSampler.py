@@ -1,8 +1,10 @@
 import numpy as np
 from abc import abstractmethod
 from typing import Any
+
+from discrete_dists.uniform import Uniform
+
 from ReplayTables.interface import LaggedTimestep, Batch, StorageIdx, StorageIdxs
-from ReplayTables.Distributions import UniformDistribution
 from ReplayTables.storage.Storage import Storage
 from ReplayTables.ingress.IndexMapper import IndexMapper
 
@@ -14,7 +16,7 @@ class IndexSampler:
         self._storage: Storage = _tmp
         self._mapper: IndexMapper = _tmp
         self._max_size = max_size
-        self._target = UniformDistribution(max_size)
+        self._target = Uniform(max_size)
 
         self._built = False
 

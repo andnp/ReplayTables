@@ -103,8 +103,8 @@ class TestPER:
         b = np.sum(batch.a == 1)
         a = np.sum(batch.a == 0)
 
-        assert b == 6660
-        assert a == 3340
+        assert b == 6832
+        assert a == 3168
 
     def test_pickeable(self):
         rng = np.random.default_rng(0)

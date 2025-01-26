@@ -3,8 +3,12 @@ import numpy as np
 from dataclasses import dataclass
 from typing import Any, Set
 
-from ReplayTables.Distributions import PrioritizedDistribution, SubDistribution, MixtureDistribution, MixinUniformDistribution
-from ReplayTables._utils.SumTree import SumTree
+from discrete_dists.distribution import Support
+from discrete_dists.mixture import MixtureDistribution, SubDistribution
+from discrete_dists.proportional import Proportional
+from discrete_dists.uniform import Uniform
+from discrete_dists.utils.SumTree import SumTree
+
 from ReplayTables.sampling.IndexSampler import IndexSampler
 from ReplayTables.storage.Storage import Storage
 from ReplayTables.ingress.IndexMapper import IndexMapper
@@ -24,7 +28,7 @@ class PrioritySequenceSampler(IndexSampler):
     ) -> None:
         super().__init__(rng, max_size)
 
-        self._target.update(self._max_size)
+        self._target.update_support(self._max_size)
 
         self._terminal = set[int]()
         # numba needs help with type inference
@@ -41,10 +45,10 @@ class PrioritySequenceSampler(IndexSampler):
     def deferred_init(self, storage: Storage, mapper: IndexMapper):
         super().deferred_init(storage, mapper)
 
-        self._ps_dist = PrioritizedSequenceDistribution(self._c, self._storage, self._mapper)
+        self._ps_dist = PrioritizedSequenceDistribution(self._max_size, self._c, self._storage, self._mapper)
 
-        self._uniform = MixinUniformDistribution()
-        self._dist = MixtureDistribution(self._max_size, dists=[
+        self._uniform = Uniform(0)
+        self._dist = MixtureDistribution(dists=[
             SubDistribution(d=self._ps_dist, p=1 - self._uniform_prob),
             SubDistribution(d=self._uniform, p=self._uniform_prob)
         ])
@@ -79,10 +83,9 @@ class PrioritySequenceSampler(IndexSampler):
         zero = np.zeros(1)
 
         self._ps_dist.update(idxs, zero)
-        self._uniform.set(idxs, zero)
 
     def total_priority(self):
-        return self._ps_dist.tree.dim_total(self._ps_dist.dim)
+        return self._ps_dist.tree.total()
 
 @dataclass
 class PSDistributionConfig:
@@ -90,9 +93,15 @@ class PSDistributionConfig:
     trace_depth: int
     combinator: str
 
-class PrioritizedSequenceDistribution(PrioritizedDistribution):
-    def __init__(self, config: PSDistributionConfig, storage: Storage, mapper: IndexMapper):
-        super().__init__(config, None)
+class PrioritizedSequenceDistribution(Proportional):
+    def __init__(
+        self,
+        support: Support | int,
+        config: PSDistributionConfig,
+        storage: Storage,
+        mapper: IndexMapper,
+    ):
+        super().__init__(support)
 
         self._c: PSDistributionConfig = config
         assert self._c.combinator in ['max', 'sum']
@@ -111,7 +120,6 @@ class PrioritizedSequenceDistribution(PrioritizedDistribution):
 
         u_idx, u_priorities = _get_priorities(
             self.tree,
-            self.dim,
             b_idxs,
             idx_mask,
             self._trace,
@@ -122,7 +130,7 @@ class PrioritizedSequenceDistribution(PrioritizedDistribution):
         u_idx = np.concatenate((idxs, u_idx), axis=0, dtype=np.int64)
         u_priorities = np.concatenate((priorities, u_priorities), axis=0)
 
-        self.tree.update(self.dim, u_idx, u_priorities)
+        self.tree.update(u_idx, u_priorities)
 
 
 @try2jit()
@@ -138,7 +146,7 @@ def _term_sequence(idxs: np.ndarray, term: Set[int]):
 
     return out
 
-def _get_priorities(tree: SumTree, d: int, idxs: np.ndarray, masks: np.ndarray, traces: np.ndarray, priorities: np.ndarray, comb: str):
+def _get_priorities(tree: SumTree, idxs: np.ndarray, masks: np.ndarray, traces: np.ndarray, priorities: np.ndarray, comb: str):
     depth = len(traces)
     out_idxs = np.empty(depth * len(idxs), dtype=np.int64)
     out = np.empty(depth * len(idxs), dtype=np.float64)
@@ -154,7 +162,7 @@ def _get_priorities(tree: SumTree, d: int, idxs: np.ndarray, masks: np.ndarray, 
             if masks[i, j]: continue
 
             idx = idxs[i, j]
-            prior = tree.get_value(d, idx)
+            prior = tree.get_value(idx)
             new = c(prior, traces[j] * priorities[i])
 
             out_idxs[k] = idx

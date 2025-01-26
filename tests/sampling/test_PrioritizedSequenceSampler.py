@@ -15,9 +15,7 @@ def test_pser_dist():
         trace_depth=3,
         combinator='max',
     )
-    dist = PrioritizedSequenceDistribution(config, storage, mapper)
-    dist._size = 10
-    dist.init()
+    dist = PrioritizedSequenceDistribution(10, config, storage, mapper)
 
     data = LaggedDataStream(lag=1)
     data.next()
@@ -28,9 +26,8 @@ def test_pser_dist():
         storage.add(idx, d)
 
     tree = dist.tree
-    dim = dist.dim
 
-    assert tree.dim_total(dim) == 0.
+    assert tree.total() == 0.
 
     idx: Any = np.array([0], dtype=np.int64)
     eid: Any = np.array([0], dtype=np.int64)
@@ -39,8 +36,8 @@ def test_pser_dist():
 
     dist.update_seq(eid, idx, val, terms)
 
-    assert tree.dim_total(dim) == 1.
-    assert tree.get_value(dim, 0) == 1.
+    assert tree.total() == 1.
+    assert tree.get_value(0) == 1.
 
     # next index with high priority
     # should not change earlier priorities because
@@ -51,9 +48,9 @@ def test_pser_dist():
 
     dist.update_seq(eid, idx, val, terms)
 
-    assert tree.dim_total(dim) == 2.
-    assert tree.get_value(dim, 0) == 1.
-    assert tree.get_value(dim, 1) == 1.
+    assert tree.total() == 2.
+    assert tree.get_value(0) == 1.
+    assert tree.get_value(1) == 1.
 
     # now prior indices should change
     idx: Any = np.array([2], dtype=np.int64)
@@ -62,10 +59,10 @@ def test_pser_dist():
 
     dist.update_seq(eid, idx, val, terms)
 
-    assert np.allclose(tree.dim_total(dim), 1110.)
-    assert np.allclose(tree.get_value(dim, 0), 10.)
-    assert np.allclose(tree.get_value(dim, 1), 100.)
-    assert np.allclose(tree.get_value(dim, 2), 1000.)
+    assert np.allclose(tree.total(), 1110.)
+    assert np.allclose(tree.get_value(0), 10.)
+    assert np.allclose(tree.get_value(1), 100.)
+    assert np.allclose(tree.get_value(2), 1000.)
 
     # does not cross termination boundaries
     idx: Any = np.array([8], dtype=np.int64)
@@ -74,10 +71,10 @@ def test_pser_dist():
 
     dist.update_seq(eid, idx, val, terms)
 
-    assert np.allclose(tree.dim_total(dim), 1121.)
-    assert np.allclose(tree.get_value(dim, 0), 10.)
-    assert np.allclose(tree.get_value(dim, 1), 100.)
-    assert np.allclose(tree.get_value(dim, 2), 1000.)
-    assert np.allclose(tree.get_value(dim, 8), 10.)
-    assert np.allclose(tree.get_value(dim, 7), 1.)
-    assert np.allclose(tree.get_value(dim, 6), 0.)
+    assert np.allclose(tree.total(), 1121.)
+    assert np.allclose(tree.get_value(0), 10.)
+    assert np.allclose(tree.get_value(1), 100.)
+    assert np.allclose(tree.get_value(2), 1000.)
+    assert np.allclose(tree.get_value(8), 10.)
+    assert np.allclose(tree.get_value(7), 1.)
+    assert np.allclose(tree.get_value(6), 0.)
